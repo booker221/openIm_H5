@@ -22,6 +22,35 @@ type GetHistoryMessageListFromReqResp = {
 
 export type ExMessageItem = MessageItem & ExType
 
+const getMessageUniqueKey = (message: Partial<MessageItem>) =>
+  message.clientMsgID ||
+  [
+    message.sendID,
+    message.recvID,
+    message.groupID,
+    message.sendTime,
+    message.seq,
+  ]
+    .filter(Boolean)
+    .join('_')
+
+const mergeUniqueMessages = (messageList: ExMessageItem[]) => {
+  const messageMap = new Map<string, ExMessageItem>()
+
+  messageList.forEach((message) => {
+    const key = getMessageUniqueKey(message)
+    if (!key) return
+
+    const previousMessage = messageMap.get(key)
+    messageMap.set(
+      key,
+      previousMessage ? { ...previousMessage, ...message } : message,
+    )
+  })
+
+  return Array.from(messageMap.values())
+}
+
 const useStore = defineStore('message', {
   state: (): StateType => ({
     historyMessageList: [],
@@ -38,10 +67,10 @@ const useStore = defineStore('message', {
       const isFirstPage = params.startClientMsgID === ''
       try {
         const { data: tmpData } = await IMSDK.getAdvancedHistoryMessageList(params)
-        this.historyMessageList = [
+        this.historyMessageList = mergeUniqueMessages([
           ...tmpData.messageList,
           ...(isFirstPage ? [] : this.historyMessageList),
-        ]
+        ])
         this.hasMore = tmpData.messageList.length !== 0
         // console.log(this.historyMessageList);
         return {
@@ -58,11 +87,23 @@ const useStore = defineStore('message', {
       }
     },
     pushNewMessage(message: MessageItem) {
+      const idx = this.historyMessageList.findIndex(
+        (msg) => getMessageUniqueKey(msg) === getMessageUniqueKey(message),
+      )
+
+      if (idx !== -1) {
+        this.historyMessageList[idx] = {
+          ...this.historyMessageList[idx],
+          ...message,
+        }
+        return
+      }
+
       this.historyMessageList.push(message)
     },
     updateOneMessage(message: ExMessageItem, isSuccessCallBack = false) {
       const idx = this.historyMessageList.findIndex(
-        (msg) => msg.clientMsgID === message.clientMsgID,
+        (msg) => getMessageUniqueKey(msg) === getMessageUniqueKey(message),
       )
       if (idx !== -1) {
         this.historyMessageList[idx] = {
