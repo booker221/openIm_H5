@@ -70,3 +70,47 @@ export enum BusinessAllowType {
   Allow = 1,
   NotAllow = 2,
 }
+
+export type FavoriteItem = {
+  id: string
+  type: number
+  title?: string
+  content?: string
+  description?: string
+  thumbnail?: string
+  fileSize?: number
+  duration?: number
+  location?: string
+  createTime?: number
+}
+
+export type FavoriteListData = {
+  total: number
+  favorites: FavoriteItem[]
+}
+
+export type WalletBalanceData = {
+  balance: number
+}
+
+export type RealNameAuthData = {
+  idCard?: string
+  idCardPhotoFront?: string
+  idCardPhotoBack?: string
+  name?: string
+  auditStatus?: number
+}
+
+export type WalletInfoData = {
+  balance: number
+  withdrawAccount?: string
+  withdrawAccountType?: number
+  withdrawReceiveAccount?: string
+  hasPaymentPassword?: boolean
+  realNameAuth?: RealNameAuthData
+}
+
+export type RealNameAuthResult = {
+  success: boolean
+  message: string
+}

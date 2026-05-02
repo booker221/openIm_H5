@@ -22,17 +22,26 @@
           <img style="width: 16px; height: 16px" :src="copy_icon" mode="" />
         </view>
       </view>
+
+      <view
+        v-if="walletEnabled"
+        class="flex h-[46px] min-w-[92px] flex-col items-end justify-between"
+        @click="menuClick('/myWallet')"
+      >
+        <text class="text-xs text-sub-text">{{ $t('profileMenu.balance') }}</text>
+        <text class="text-[18px] font-medium text-[#0C1C33]">¥{{ walletAmount }}</text>
+      </view>
     </view>
 
     <div class="mx-auto mt-[10px] w-[90%] rounded-md bg-white">
       <div
-        v-for="(menu, idx) in profileMenus"
-        :key="idx"
+        v-for="menu in profileMenus"
+        :key="menu.title"
         class="flex items-center justify-between p-4"
         @click="menuClick(menu.route)"
       >
         <div class="flex">
-          <img width="24" :src="menu.icon" alt="" />
+          <van-icon :name="menu.icon" size="22" color="#0C1C33" />
           <span class="ml-3">{{ menu.title }}</span>
         </div>
         <img :src="back" width="24" alt="back" />
@@ -43,10 +52,6 @@
 
 <script name="profile" setup lang="ts">
 import Avatar from '@/components/Avatar/index.vue'
-import info from '@assets/images/profile/info.png'
-import settings from '@assets/images/profile/settings.png'
-import about from '@assets/images/profile/about.png'
-import logout from '@assets/images/profile/logout.png'
 import back from '@assets/images/profile/back.png'
 import copy_icon from '@assets/images/profile/copy.png'
 import bg from '@assets/images/profile/bg.png'
@@ -54,41 +59,78 @@ import bg from '@assets/images/profile/bg.png'
 import { showConfirmDialog, showToast } from 'vant'
 import useUserStore from '@/store/modules/user'
 import { useClipboard } from '@vueuse/core'
+import useAppConfigStore from '@/store/modules/appConfig'
+import { getWalletBalance } from '@/api/wallet'
 
 const { copy, isSupported } = useClipboard()
-const { t, locale } = useI18n()
-
-const profileMenus = [
-  {
-    icon: info,
-    title: t('profileMenu.personalInformation'),
-    route: 'selfInfoDetails',
-  },
-  {
-    icon: settings,
-    title: t('profileMenu.accountSetting'),
-    route: 'accountSettings',
-  },
-  {
-    icon: about,
-    title: t('profileMenu.aboutUs'),
-    route: 'about',
-  },
-  {
-    icon: logout,
-    title: t('profileMenu.logOut'),
-  },
-]
-
-watch(locale, () => {
-  profileMenus[0].title = t('profileMenu.personalInformation')
-  profileMenus[1].title = t('profileMenu.accountSetting')
-  profileMenus[2].title = t('profileMenu.aboutUs')
-  profileMenus[3].title = t('profileMenu.logOut')
-})
+const { t } = useI18n()
 
 const router = useRouter()
 const userStore = useUserStore()
+const appConfigStore = useAppConfigStore()
+const walletBalance = ref(0)
+const walletEnabled = computed(() => !!appConfigStore.storeAppConfig?.wallet)
+const walletAmount = computed(() => (walletBalance.value / 100).toFixed(2))
+
+type ProfileMenu = {
+  icon: string
+  title: string
+  route?: string
+}
+
+const profileMenus = computed(() => {
+  const menus: ProfileMenu[] = [
+    {
+      icon: 'contact',
+      title: t('profileMenu.personalInformation'),
+      route: '/selfInfoDetails',
+    },
+  ]
+
+  if (walletEnabled.value) {
+    menus.push(
+      {
+        icon: 'balance-pay',
+        title: t('profileMenu.myWallet'),
+        route: '/myWallet',
+      },
+      {
+        icon: 'coupon-o',
+        title: t('profileMenu.receivingAccount'),
+        route: '/setWithdrawAccount',
+      },
+      {
+        icon: 'idcard',
+        title: t('profileMenu.realNameAuth'),
+        route: '/realNameAuth',
+      },
+    )
+  }
+
+  menus.push(
+    {
+      icon: 'star-o',
+      title: t('profileMenu.myFavorites'),
+      route: '/myFavorites',
+    },
+    {
+      icon: 'setting-o',
+      title: t('profileMenu.accountSetting'),
+      route: '/accountSettings',
+    },
+    {
+      icon: 'info-o',
+      title: t('profileMenu.aboutUs'),
+      route: '/about',
+    },
+    {
+      icon: 'revoke',
+      title: t('profileMenu.logOut'),
+    },
+  )
+
+  return menus
+})
 
 const menuClick = (route?: string) => {
   if (route) {
@@ -105,6 +147,16 @@ const copyUserID = () => {
   showToast(
     isSupported ? t('messageTip.copySuccess') : t('messageTip.environmentNotSupported'),
   )
+}
+
+const loadWalletBalance = async () => {
+  if (!walletEnabled.value) return
+  try {
+    const { data } = await getWalletBalance()
+    walletBalance.value = data?.balance ?? 0
+  } catch (error) {
+    walletBalance.value = 0
+  }
 }
 
 const tryLogout = () => {
@@ -124,6 +176,22 @@ const tryLogout = () => {
     },
   }).catch(() => {})
 }
+
+watch(
+  walletEnabled,
+  (enabled) => {
+    if (enabled) {
+      loadWalletBalance()
+    }
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  if (!appConfigStore.storeLoaded) {
+    appConfigStore.fetchAppConfig(true)
+  }
+})
 </script>
 
 <style lang="scss" scoped></style>

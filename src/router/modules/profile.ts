@@ -17,6 +17,26 @@ const profileRouters: Array<RouteRecordRaw> = [
     component: () => import('@pages/profile/accountSettings/index.vue'),
   },
   {
+    path: '/myWallet',
+    name: 'MyWallet',
+    component: () => import('@pages/profile/myWallet/index.vue'),
+  },
+  {
+    path: '/setWithdrawAccount',
+    name: 'SetWithdrawAccount',
+    component: () => import('@pages/profile/setWithdrawAccount/index.vue'),
+  },
+  {
+    path: '/realNameAuth',
+    name: 'RealNameAuth',
+    component: () => import('@pages/profile/realNameAuth/index.vue'),
+  },
+  {
+    path: '/myFavorites',
+    name: 'MyFavorites',
+    component: () => import('@pages/profile/myFavorites/index.vue'),
+  },
+  {
     path: '/blackList',
     name: 'BlackList',
     component: () => import('@pages/profile/blackList/index.vue'),
