@@ -22,15 +22,6 @@ const loginRouters: Array<RouteRecordRaw> = [
   {
     path: '/getCode',
     name: 'GetCode',
-    props: ({ query }) => {
-      let isRegiste
-      try {
-        isRegiste = JSON.parse(query.isRegiste as string)
-      } catch (error) {}
-      return {
-        isRegiste,
-      }
-    },
     component: () => import('@pages/login/getCode/index.vue'),
   },
   {
@@ -38,12 +29,6 @@ const loginRouters: Array<RouteRecordRaw> = [
     name: 'VerifyCode',
     props: checkBaseData,
     component: () => import('@pages/login/verifyCode/index.vue'),
-  },
-  {
-    path: '/setPassword',
-    name: 'SetPassword',
-    props: checkBaseData,
-    component: () => import('@pages/login/setPassword/index.vue'),
   },
   {
     path: '/setBaseInfo',

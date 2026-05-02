@@ -70,10 +70,10 @@ import login_back from '@assets/images/login_back.png'
 import { register } from '@/api/login'
 import { setIMProfile } from '@/utils/storage'
 import { feedbackToast } from '@/utils/common'
-import { BaseData } from '../verifyCode/index.vue'
+import { RegisterBaseData } from '../verifyCode/index.vue'
 
 const props = defineProps<{
-  baseData: BaseData & { verificationCode: string }
+  baseData: RegisterBaseData & { verificationCode: string }
 }>()
 const router = useRouter()
 const { t } = useI18n()

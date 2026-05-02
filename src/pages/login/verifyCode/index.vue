@@ -36,33 +36,30 @@
 <script setup lang="ts">
 import { UsedFor } from '@/api/data'
 import { sendSms, verifyCode } from '@/api/login'
-import { feedbackToast } from '@/utils/common'
 import login_back from '@assets/images/login_back.png'
 
-export interface BaseData {
+export interface RegisterBaseData {
   areaCode: string
   phoneNumber: string
   invitationCode: string
-  isRegiste: boolean
 }
 
 const props = defineProps<{
-  baseData: BaseData
+  baseData: RegisterBaseData
 }>()
-const { t } = useI18n()
 const router = useRouter()
-const verificationCode = ref()
+const verificationCode = ref('')
 const showKeyboard = ref(true)
 const count = ref(60)
 let timer: NodeJS.Timer
 
 const onSubmit = () => {
-  const { phoneNumber, areaCode, isRegiste } = props.baseData
+  const { phoneNumber, areaCode } = props.baseData
   verifyCode({
     phoneNumber,
     areaCode,
     verifyCode: verificationCode.value,
-    usedFor: isRegiste ? UsedFor.Register : UsedFor.Modify,
+    usedFor: UsedFor.Register,
   }).then(() =>
     router.push({
       path: 'setBaseInfo',
@@ -96,7 +93,7 @@ const reSend = () => {
   sendSms({
     phoneNumber: props.baseData.phoneNumber,
     areaCode: props.baseData.areaCode,
-    usedFor: props.baseData.isRegiste ? UsedFor.Register : UsedFor.Modify,
+    usedFor: UsedFor.Register,
   }).then(startTimer)
   // .catch(error => feedbackToast({ message: t('messageTip.sendCodeFailed'), error }))
 }

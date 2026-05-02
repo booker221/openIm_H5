@@ -3,7 +3,6 @@ import {
   ChangPasswordParams,
   DemoLoginParams,
   DemoRegisterParams,
-  ModifyPasswordParams,
   SendSmsParams,
   VerifyCodeParams,
 } from './data'
@@ -35,16 +34,6 @@ export const register = (params: DemoRegisterParams) => {
     }),
   )
 }
-
-// new
-export const modify = (params: ModifyPasswordParams) =>
-  request.post(
-    '/account/password/reset',
-    JSON.stringify({
-      ...params,
-      platform,
-    }),
-  )
 
 // new
 export const login = (params: DemoLoginParams) => {

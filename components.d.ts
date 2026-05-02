@@ -22,6 +22,7 @@ declare module '@vue/runtime-core' {
     VanActionSheet: typeof import('vant/es')['ActionSheet']
     VanBadge: typeof import('vant/es')['Badge']
     VanButton: typeof import('vant/es')['Button']
+    VanCheckbox: typeof import('vant/es')['Checkbox']
     VanDatePicker: typeof import('vant/es')['DatePicker']
     VanEmpty: typeof import('vant/es')['Empty']
     VanField: typeof import('vant/es')['Field']

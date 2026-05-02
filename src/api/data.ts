@@ -2,8 +2,6 @@ import { MessageReceiveOptType } from '@openim/wasm-client-sdk'
 
 export enum UsedFor {
   Register = 1,
-  Modify = 2,
-  Login = 3,
 }
 
 export type SendSmsParams = {
@@ -37,13 +35,6 @@ export type VerifyCodeParams = {
   usedFor: UsedFor
 }
 
-export type ModifyPasswordParams = {
-  phoneNumber: string
-  areaCode: string
-  verifyCode: string
-  password: string
-}
-
 export type ChangPasswordParams = {
   userID: string
   currentPassword: string
@@ -55,7 +46,6 @@ export type DemoLoginParams = {
   areaCode: string
   password: string
   account?: string
-  verifyCode?: string
 }
 
 export interface BusinessUserInfo {

@@ -11,7 +11,7 @@
       <template v-slot:loading>
         <van-loading type="spinner" size="20" />
       </template>
-      <template v-slot:error>{{ $t('failLoad') }}</template>
+      <template v-slot:error>{{ $t('messageTip.failLoad') }}</template>
     </van-image>
   </div>
 </template>

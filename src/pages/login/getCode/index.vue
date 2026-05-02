@@ -2,9 +2,7 @@
   <div class="page_container relative px-10">
     <img class="mt-[5vh] h-6 w-6" :src="login_back" alt="" @click="$router.back" />
 
-    <div class="my-12 text-2xl font-semibold text-primary">
-      {{ isRegiste ? $t('register') : $t('forgetPasswordTitle') }}
-    </div>
+    <div class="my-12 text-2xl font-semibold text-primary">{{ $t('register') }}</div>
 
     <van-form @submit="onSubmit">
       <div>
@@ -28,31 +26,8 @@
         </div>
       </div>
 
-      <div class="mt-5" v-if="isRegiste"></div>
-
-      <div class="mt-5" v-else>
-        <div class="mb-1 text-sm text-sub-text">{{ $t('reAcquireDesc') }}</div>
-        <div class="rounded-lg border border-gap-text">
-          <van-field
-            class="!py-1"
-            clearable
-            v-model="formData.verificationCode"
-            name="verificationCode"
-            type="text"
-            :placeholder="$t('placeholder.inputVerificationCode')"
-          >
-            <template #button>
-              <span class="text-primary" @click="reSend" v-if="count <= 0">{{
-                $t('buttons.verificationCode')
-              }}</span>
-              <span class="text-primary" v-else>{{ count }}S</span>
-            </template>
-          </van-field>
-        </div>
-      </div>
-
       <div class="mt-28">
-        <van-button block type="primary" native-type="submit">
+        <van-button :loading="loading" block type="primary" native-type="submit">
           {{ $t('buttons.next') }}
         </van-button>
       </div>
@@ -76,7 +51,7 @@
 <script setup lang="ts">
 import type { PickerConfirmEventParams } from 'vant'
 import { UsedFor } from '@/api/data'
-import { sendSms, verifyCode } from '@/api/login'
+import { sendSms } from '@/api/login'
 import countryCode from '@/utils/areaCode'
 import { feedbackToast } from '@/utils/common'
 import login_back from '@assets/images/login_back.png'
@@ -85,19 +60,16 @@ const phoneRegExp = /^1[3-9]\d{9}$/
 const { t } = useI18n()
 const router = useRouter()
 
-const props = defineProps<{ isRegiste: boolean }>()
 const formData = reactive({
   phoneNumber: '',
   areaCode: '+86',
   invitationCode: '',
   accept: true,
-  verificationCode: '',
 })
 const showAreaCode = ref(false)
-const count = ref(0)
-let timer: NodeJS.Timer
+const loading = ref(false)
 
-const onSubmit = () => {
+const onSubmit = async () => {
   if (!phoneRegExp.test(formData.phoneNumber)) {
     feedbackToast({
       message: t('messageTip.correctPhoneNumber'),
@@ -105,71 +77,28 @@ const onSubmit = () => {
     })
     return
   }
-  if (!props.isRegiste) {
-    verifyCode({
+  loading.value = true
+  try {
+    await sendSms({
       phoneNumber: formData.phoneNumber,
       areaCode: formData.areaCode,
-      verifyCode: formData.verificationCode,
-      usedFor: UsedFor.Modify,
-    }).then(() => {
-      router.push({
-        path: 'setPassword',
-        query: {
-          baseData: JSON.stringify({
-            ...formData,
-            isRegiste: props.isRegiste,
-          }),
-        },
-      })
+      usedFor: UsedFor.Register,
+      invitationCode: formData.invitationCode,
     })
-    return
-  }
-  sendSms({
-    phoneNumber: formData.phoneNumber,
-    areaCode: formData.areaCode,
-    usedFor: UsedFor.Register,
-    invitationCode: formData.invitationCode,
-  }).then(() => {
     router.push({
       path: 'verifyCode',
       query: {
-        baseData: JSON.stringify({
-          ...formData,
-          isRegiste: props.isRegiste,
-        }),
+        baseData: JSON.stringify(formData),
       },
     })
-  })
-  // .catch(error => feedbackToast({ message: t('messageTip.sendCodeFailed'), error }))
+  } finally {
+    loading.value = false
+  }
 }
 
 const onConfirmAreaCode = ({ selectedValues }: PickerConfirmEventParams) => {
   formData.areaCode = String(selectedValues[0])
   showAreaCode.value = false
-}
-
-const reSend = () => {
-  if (count.value > 0) return
-  sendSms({
-    phoneNumber: formData.phoneNumber,
-    areaCode: formData.areaCode,
-    usedFor: UsedFor.Login,
-  }).then(startTimer)
-  // .catch(error => feedbackToast({ message: t('messageTip.sendCodeFailed'), error }))
-}
-
-const startTimer = () => {
-  if (timer) {
-    clearInterval(timer)
-  }
-  count.value = 60
-  timer = setInterval(() => {
-    if (count.value > 0) {
-      count.value -= 1
-    } else {
-      clearInterval(timer)
-    }
-  }, 1000)
 }
 </script>
 
