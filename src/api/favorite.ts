@@ -26,6 +26,13 @@ export const getFavoriteList = (params: {
     getTokenHeaders(),
   )
 
+export const createFavorite = (data: Record<string, unknown>) =>
+  request.post(
+    '/favorite/create',
+    JSON.stringify(data),
+    getTokenHeaders(),
+  )
+
 export const searchFavorite = (params: {
   keyword: string
   pageNumber?: number

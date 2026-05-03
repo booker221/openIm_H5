@@ -8,6 +8,10 @@ import store from '../index'
 interface StateType {
   historyMessageList: ExMessageItem[]
   hasMore: boolean
+  quoteMessage?: ExMessageItem
+  isMultiSelectMode: boolean
+  selectedMessageKeys: string[]
+  forwardMessageList: ExMessageItem[]
 }
 
 type ExType = {
@@ -22,7 +26,7 @@ type GetHistoryMessageListFromReqResp = {
 
 export type ExMessageItem = MessageItem & ExType
 
-const getMessageUniqueKey = (message: Partial<MessageItem>) =>
+export const getMessageUniqueKey = (message: Partial<MessageItem>) =>
   message.clientMsgID ||
   [
     message.sendID,
@@ -55,10 +59,22 @@ const useStore = defineStore('message', {
   state: (): StateType => ({
     historyMessageList: [],
     hasMore: true,
+    quoteMessage: undefined,
+    isMultiSelectMode: false,
+    selectedMessageKeys: [],
+    forwardMessageList: [],
   }),
   getters: {
     storeHistoryMessageList: (state) => state.historyMessageList,
     storeHistoryMessageHasMore: (state) => state.hasMore,
+    storeQuoteMessage: (state) => state.quoteMessage,
+    storeIsMultiSelectMode: (state) => state.isMultiSelectMode,
+    storeSelectedMessageKeys: (state) => state.selectedMessageKeys,
+    storeSelectedMessages: (state) =>
+      state.historyMessageList.filter((message) =>
+        state.selectedMessageKeys.includes(getMessageUniqueKey(message)),
+      ),
+    storeForwardMessageList: (state) => state.forwardMessageList,
   },
   actions: {
     async getHistoryMessageListFromReq(
@@ -112,9 +128,77 @@ const useStore = defineStore('message', {
         }
       }
     },
+    setQuoteMessage(message?: ExMessageItem) {
+      this.quoteMessage = message
+    },
+    clearQuoteMessage() {
+      this.quoteMessage = undefined
+    },
+    enterMultiSelectMode(message?: ExMessageItem) {
+      this.isMultiSelectMode = true
+      this.selectedMessageKeys = []
+      if (message) {
+        this.toggleMessageSelected(message)
+      }
+    },
+    exitMultiSelectMode() {
+      this.isMultiSelectMode = false
+      this.selectedMessageKeys = []
+    },
+    toggleMessageSelected(message: ExMessageItem) {
+      const key = getMessageUniqueKey(message)
+      if (!key) return
+
+      const idx = this.selectedMessageKeys.findIndex(
+        (selectedKey) => selectedKey === key,
+      )
+      if (idx > -1) {
+        const tmpKeys = [...this.selectedMessageKeys]
+        tmpKeys.splice(idx, 1)
+        this.selectedMessageKeys = tmpKeys
+        return
+      }
+
+      this.selectedMessageKeys = [...this.selectedMessageKeys, key]
+    },
+    isMessageSelected(message: Partial<MessageItem>) {
+      const key = getMessageUniqueKey(message)
+      if (!key) return false
+      return this.selectedMessageKeys.includes(key)
+    },
+    selectAllMessages() {
+      this.selectedMessageKeys = this.historyMessageList
+        .map((message) => getMessageUniqueKey(message))
+        .filter(Boolean)
+    },
+    clearSelectedMessages() {
+      this.selectedMessageKeys = []
+    },
+    setForwardMessageList(messageList: ExMessageItem[]) {
+      this.forwardMessageList = [...messageList]
+    },
+    clearForwardMessageList() {
+      this.forwardMessageList = []
+    },
+    removeMessages(messageList: Partial<MessageItem>[]) {
+      const removeKeySet = new Set(
+        messageList.map((message) => getMessageUniqueKey(message)).filter(Boolean),
+      )
+
+      this.historyMessageList = this.historyMessageList.filter(
+        (message) => !removeKeySet.has(getMessageUniqueKey(message)),
+      )
+      this.selectedMessageKeys = this.selectedMessageKeys.filter(
+        (key) => !removeKeySet.has(key),
+      )
+    },
     resetHistoryMessageList() {
       this.historyMessageList = []
       this.hasMore = true
+      this.quoteMessage = undefined
+      this.isMultiSelectMode = false
+      this.selectedMessageKeys = []
+      this.forwardMessageList = []
     },
     updateMessageNicknameAndFaceUrl({
       sendID,

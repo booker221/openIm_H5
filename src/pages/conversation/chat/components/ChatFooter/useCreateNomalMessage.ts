@@ -1,8 +1,7 @@
-import useConversationStore from '@/store/modules/conversation'
+import useMessageStore from '@/store/modules/message'
 import { feedbackToast } from '@/utils/common'
 import { IMSDK, getCleanText } from '@/utils/imCommon'
 import type { MessageItem } from '@openim/wasm-client-sdk/lib/types/entity'
-import { FaceMessageParams } from '@openim/wasm-client-sdk/lib/types/params'
 import { Ref } from 'vue'
 
 type CreateNomalMessageProps = {
@@ -12,6 +11,8 @@ type CreateNomalMessageProps = {
 export default function useCreateNomalMessage({
   messageContent,
 }: CreateNomalMessageProps) {
+  const messageStore = useMessageStore()
+
   const getCleanTextWithBr = () => {
     let text = messageContent.value
     text = text.replace(/<div>/g, '\n').replace(/<\/div>/g, '')
@@ -20,7 +21,14 @@ export default function useCreateNomalMessage({
 
   const getTextMessage = async () => {
     const formattedText = getCleanTextWithBr()
-    console.log(formattedText)
+    if (messageStore.storeQuoteMessage) {
+      return (
+        await IMSDK.createAdvancedQuoteMessage({
+          text: formattedText,
+          message: messageStore.storeQuoteMessage,
+        })
+      ).data
+    }
 
     return (await IMSDK.createTextMessage(formattedText)).data
   }

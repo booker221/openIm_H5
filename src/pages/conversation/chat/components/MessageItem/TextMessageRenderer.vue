@@ -17,6 +17,8 @@ const content = computed(() => {
   let msgStr = ''
   if (props.message.contentType === MessageType.TextMessage) {
     msgStr = props.message.textElem?.content!
+  } else if (props.message.contentType === MessageType.AtTextMessage) {
+    msgStr = props.message.atTextElem?.text!
   }
   return parseBr(formatLink(msgStr))
 })

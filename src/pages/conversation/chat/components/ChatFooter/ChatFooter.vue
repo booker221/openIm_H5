@@ -3,15 +3,28 @@
     <div v-if="getPlaceholder.length > 0" class="flex h-[54px] items-center justify-center bg-[#F0F2F6]">
       <span class="text-sm text-[#8E9AB0]">{{ getPlaceholder }}</span>
     </div>
-    <div v-else id="chat_footer" class="flex items-center bg-[#F0F2F6] px-3 py-3">
-      <div class="flex-grow">
-        <CustomEdit class="bg-[#fff]" ref="inputRef"
-          @focus="onFocusUpdate(true)" @blur="onFocusUpdate(false)" v-model:input="messageContent"
-          :placeholder="$t('placeholder.pleaseInput')" @trigger-at="() => { }" />
+    <div v-else class="bg-[#F0F2F6] px-3 pb-3 pt-2">
+      <div v-if="quoteMessage" class="mb-2 flex items-start rounded-[10px] bg-white px-3 py-2">
+        <div class="min-w-0 flex-1 border-l-[3px] border-[#0089FF] pl-2">
+          <div class="mb-1 text-xs text-[#0089FF]">
+            {{ quoteMessage.senderNickname || $t('messageDescription.quoteMessage') }}
+          </div>
+          <div class="truncate text-xs text-[#8E9AB0]">
+            {{ quotePreview }}
+          </div>
+        </div>
+        <van-icon class="ml-2 mt-0.5 text-[#8E9AB0]" name="cross" @click="messageStore.clearQuoteMessage()" />
       </div>
-      <img v-show="!messageContent" @click="clickAddBtn" class="ml-3 h-[26px] min-w-[26px]" :src="add" alt="" />
-      <img v-show="messageContent" @click="switchTextMessage" class="ml-3 h-[26px] min-w-[26px]" :src="send"
-        alt="send" />
+      <div id="chat_footer" class="flex items-center">
+        <div class="flex-grow">
+          <CustomEdit class="bg-[#fff]" ref="inputRef"
+            @focus="onFocusUpdate(true)" @blur="onFocusUpdate(false)" v-model:input="messageContent"
+            :placeholder="$t('placeholder.pleaseInput')" @trigger-at="() => { }" />
+        </div>
+        <img v-show="!messageContent" @click="clickAddBtn" class="ml-3 h-[26px] min-w-[26px]" :src="add" alt="" />
+        <img v-show="messageContent" @click="switchTextMessage" class="ml-3 h-[26px] min-w-[26px]" :src="send"
+          alt="send" />
+      </div>
     </div>
     <ChatFooterAction v-show="showActionBar" @closeActionBar="closeActionBar" @getFile="getFile" />
   </div>
@@ -23,23 +36,23 @@ import send from '@/assets/images/chatFooter/send.png'
 
 import CustomEdit from '@/components/CustomEdit/index.vue'
 import ChatFooterAction from './ChatFooterAction.vue'
-import { onLongPress, useThrottleFn } from '@vueuse/core'
 import {
   GroupMemberRole,
   GroupStatus,
   MessageType,
   SessionType,
 } from '@openim/wasm-client-sdk'
-import { showToast, UploaderFileListItem } from 'vant'
+import { UploaderFileListItem } from 'vant'
 import useSendMessage from '@/hooks/useSendMessage'
 import useConversationStore from '@/store/modules/conversation'
 import useContactStore from '@/store/modules/contact'
-import { IMSDK } from '@/utils/imCommon'
+import useMessageStore from '@/store/modules/message'
 import { feedbackToast } from '@/utils/common'
 import emitter from '@/utils/events'
 import { checkIsSafari } from '@/utils/common'
 import useCreateNomalMessage from './useCreateNomalMessage'
 import useCreateFileMessage from './useCreateFileMessage'
+import { getMessagePreviewText } from '../MessageItem/messageUtils'
 
 const emit = defineEmits([])
 defineProps()
@@ -47,6 +60,7 @@ defineProps()
 const { t } = useI18n()
 const conversationStore = useConversationStore()
 const contactStore = useContactStore()
+const messageStore = useMessageStore()
 const { createFileMessage } = useCreateFileMessage()
 
 // message
@@ -57,6 +71,10 @@ const { switchNomalMessage } = useCreateNomalMessage({
   messageContent,
 })
 const { sendMessage } = useSendMessage()
+const quoteMessage = computed(() => messageStore.storeQuoteMessage)
+const quotePreview = computed(() =>
+  quoteMessage.value ? getMessagePreviewText(quoteMessage.value) : '',
+)
 
 const isSingle = computed(
   () =>
@@ -104,6 +122,7 @@ const switchTextMessage = async () => {
   const message = await switchNomalMessage()
   if (message) {
     sendMessage({ message })
+    messageStore.clearQuoteMessage()
   }
   resetState()
 }
@@ -157,6 +176,15 @@ onActivated(() => {
   inputRef.value.clear()
   inputRef.value.inputRef.focus()
 })
+
+watch(
+  () => messageStore.storeQuoteMessage?.clientMsgID,
+  async (newVal) => {
+    if (!newVal) return
+    await nextTick()
+    inputRef.value?.inputRef?.focus()
+  },
+)
 </script>
 
 <style lang="scss" scoped>

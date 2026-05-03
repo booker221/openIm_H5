@@ -7,7 +7,14 @@
       message_item_checked: showCheck,
       message_item_active: isActive || source.jump,
     }"
+    @click="handleClick"
+    @contextmenu.prevent="handleOpenMenu"
   >
+    <div v-if="showCheck" class="check_wrap">
+      <div class="check_icon" :class="{ check_icon_active: isChecked }">
+        <van-icon v-if="isChecked" name="success" />
+      </div>
+    </div>
     <div class="message_container_wrap">
       <Avatar
         ref="avatarRef"
@@ -40,18 +47,23 @@ import Avatar from '@/components/Avatar/index.vue'
 import TextMessageRenderer from './TextMessageRenderer.vue'
 import MediaMessageRenderer from './MediaMessageRenderer.vue'
 import CatchMsgRenderer from './CatchMsgRenderer.vue'
+import QuoteMessageRenderer from './QuoteMessageRenderer.vue'
 import { MessageType, SessionType } from '@openim/wasm-client-sdk'
 import useUserStore from '@/store/modules/user'
 import { ExedMessageItem } from './data'
 import useContactStore from '@/store/modules/contact'
 import useConversationStore from '@/store/modules/conversation'
 import { formatMessageTime } from '@/utils/imCommon'
+import { onLongPress } from '@vueuse/core'
 
 interface MessageItemProps {
   source: ExedMessageItem
   showCheck?: boolean
   isPreView?: boolean
   isActive?: boolean
+  isChecked?: boolean
+  onOpenMenu?: (message: ExedMessageItem, event: Event) => void
+  onToggleCheck?: (message: ExedMessageItem) => void
 }
 
 const userStore = useUserStore()
@@ -71,18 +83,48 @@ const isSelfMsg = computed(() => userStore.selfInfo.userID === source.value.send
 const getRenderComp = computed(() => {
   switch (props.source.contentType) {
     case MessageType.TextMessage:
+    case MessageType.AtTextMessage:
       return TextMessageRenderer
     case MessageType.PictureMessage:
       return MediaMessageRenderer
+    case MessageType.QuoteMessage:
+      return QuoteMessageRenderer
     default:
       return CatchMsgRenderer
   }
 })
 
 const toDetails = async (e: Event) => {
+  if (props.showCheck) {
+    return
+  }
   e.preventDefault()
   contactStore.getUserCardData(props.source.sendID, props.source.groupID)
 }
+
+const handleClick = () => {
+  if (!props.showCheck) {
+    return
+  }
+  props.onToggleCheck?.(props.source)
+}
+
+const handleOpenMenu = (event: Event) => {
+  if (props.showCheck) {
+    return
+  }
+  props.onOpenMenu?.(props.source, event)
+}
+
+onLongPress(
+  messageContainerRef,
+  (event) => {
+    handleOpenMenu(event)
+  },
+  {
+    delay: 350,
+  },
+)
 </script>
 
 <style lang="scss" scoped>
@@ -103,6 +145,30 @@ const toDetails = async (e: Event) => {
 
   .message_container_wrap {
     display: flex;
+  }
+
+  .check_wrap {
+    display: flex;
+    align-items: center;
+    margin-right: 12px;
+  }
+
+  .check_icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid #c8ced8;
+    color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+  }
+
+  .check_icon_active {
+    border-color: #0089ff;
+    background: #0089ff;
+    color: #fff;
   }
 
   .message_container {
@@ -154,7 +220,7 @@ const toDetails = async (e: Event) => {
 
   &_checked {
     align-items: flex-start;
-    padding: 12px;
+    padding: 12px 16px;
   }
 
   &_active {

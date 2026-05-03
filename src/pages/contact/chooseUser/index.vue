@@ -85,10 +85,12 @@ import type {
 import { GenericListItemSource } from '@/components/GenericListItem/data'
 import { ContactChooseEnum } from './data'
 import useContactStore from '@/store/modules/contact'
+import useMessageStore from '@/store/modules/message'
 import { feedbackToast, formatContacts } from '@/utils/common'
 import { IMSDK } from '@/utils/imCommon'
 import useConversationStore from '@/store/modules/conversation'
 import { SessionType } from '@openim/wasm-client-sdk'
+import useSendMessage from '@/hooks/useSendMessage'
 
 const { t } = useI18n()
 
@@ -105,6 +107,7 @@ const tabs = [
 
 const canChooseGroupTypes = [
   ContactChooseEnum.ShareCard,
+  ContactChooseEnum.ForwardMessage,
 ]
 
 type CheckedItem = FriendUserItem & GroupItem & ConversationItem
@@ -112,6 +115,8 @@ type CheckedItem = FriendUserItem & GroupItem & ConversationItem
 const router = useRouter()
 const contactStore = useContactStore()
 const conversationStore = useConversationStore()
+const messageStore = useMessageStore()
+const { sendMessage } = useSendMessage()
 
 const activeTab = ref(0)
 const showPop = ref(false)
@@ -255,6 +260,36 @@ const confirm = async () => {
         .then(() => feedbackToast({ message: t('messageTip.inviteSuccess') }))
         .catch(() => feedbackToast({ message: t('messageTip.inviteFailed') }))
         .finally(() => router.back())
+      break
+    case ContactChooseEnum.ForwardMessage:
+      if (!messageStore.storeForwardMessageList.length) {
+        feedbackToast({ message: t('messageTip.forwardFailed'), error: true })
+        return
+      }
+
+      try {
+        for (const checkedItem of allCheckedList.value) {
+          for (const originalMessage of messageStore.storeForwardMessageList) {
+            const { data: forwardMessage } = await IMSDK.createForwardMessage(
+              originalMessage,
+            )
+            await sendMessage({
+              recvID: checkedItem.userID,
+              groupID: checkedItem.groupID,
+              message: forwardMessage,
+              needOpreateMessage: false,
+            })
+          }
+        }
+        messageStore.clearForwardMessageList()
+        if (messageStore.storeIsMultiSelectMode) {
+          messageStore.exitMultiSelectMode()
+        }
+        feedbackToast({ message: t('messageTip.forwardSuccess') })
+        router.back()
+      } catch (error) {
+        feedbackToast({ message: t('messageTip.forwardFailed'), error })
+      }
       break
     default:
       break
