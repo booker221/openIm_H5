@@ -1,0 +1,48 @@
+{
+  "id": "H5A1B2C3D",
+  "name": "OpenIM H5",
+  "version": {
+    "name": "1.0.0",
+    "code": "100"
+  },
+  "launch_path": "www/index.html",
+  "description": "OpenIM H5 packaged as a 5+ App project for HBuilderX.",
+  "developer": {
+    "name": "OpenIM",
+    "url": "https://openim.io"
+  },
+  "screenOrientation": [
+    "portrait-primary"
+  ],
+  "permissions": {},
+  "plus": {
+    "allowsInlineMediaPlayback": true,
+    "mediaPlaybackRequiresUserAction": false,
+    "popGesture": "close",
+    "kernel": {
+      "ios": "WKWebview",
+      "recovery": "reload"
+    },
+    "safearea": {
+      "bottom": {
+        "offset": "auto"
+      }
+    },
+    "splashscreen": {
+      "autoclose": true,
+      "waiting": true,
+      "delay": 0
+    },
+    "statusbar": {
+      "immersed": "supportedDevice",
+      "style": "dark",
+      "background": "#ffffff"
+    },
+    "distribute": {
+      "google": {
+        "packagename": "io.openim.h5",
+        "minSdkVersion": 21
+      }
+    }
+  }
+}
