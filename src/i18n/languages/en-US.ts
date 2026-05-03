@@ -528,6 +528,8 @@ export const lang = {
     favoriteFailed: 'Failed to add favorite!',
     featureNotSupportedOnH5: 'This feature is not supported on H5 yet',
     cameraInitFailed: 'Unable to start the camera scanner',
+    cameraRequiresSecureContext:
+      'Camera scanning requires HTTPS or localhost in the current browser',
     qrCodeInvalid: 'This QR code is not supported by OpenIM',
     qrCodeUserNotFound: 'The user was not found or the QR code has expired',
     qrCodeGroupNotFound: 'The group was not found or the QR code has expired',

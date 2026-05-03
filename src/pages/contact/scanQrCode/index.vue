@@ -106,17 +106,43 @@ const contactStore = useContactStore()
 const conversationStore = useConversationStore()
 
 const manualContent = ref('')
-const cameraMode = ref<'rear' | 'off'>('rear')
+const cameraMode = ref<'rear' | 'off'>('off')
 const torchEnabled = ref(false)
 const supportsTorch = ref(false)
 const cameraErrorMessage = ref('')
 const isHandlingResult = ref(false)
 const lastContent = ref('')
 const lastHandledAt = ref(0)
+const cameraSupported = ref(false)
 
-const showScanner = computed(() => cameraMode.value !== 'off')
+const showScanner = computed(() => cameraSupported.value && cameraMode.value !== 'off')
+
+const detectCameraSupport = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false
+  }
+
+  return !!navigator.mediaDevices?.getUserMedia
+}
+
+const updateCameraSupportState = () => {
+  cameraSupported.value = detectCameraSupport()
+
+  if (cameraSupported.value) {
+    cameraErrorMessage.value = ''
+    return true
+  }
+
+  supportsTorch.value = false
+  cameraMode.value = 'off'
+  cameraErrorMessage.value = window.isSecureContext
+    ? t('messageTip.environmentNotSupported')
+    : t('messageTip.cameraRequiresSecureContext')
+  return false
+}
 
 const enableCamera = () => {
+  if (!updateCameraSupportState()) return
   cameraErrorMessage.value = ''
   torchEnabled.value = false
   cameraMode.value = 'rear'
@@ -231,4 +257,8 @@ const submitManualContent = () => {
   }
   handleDecodedContent(manualContent.value)
 }
+
+onMounted(() => {
+  enableCamera()
+})
 </script>

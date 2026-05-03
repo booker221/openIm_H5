@@ -524,6 +524,7 @@ export const lang = {
     favoriteFailed: '收藏失败！',
     featureNotSupportedOnH5: 'H5 暂不支持该功能',
     cameraInitFailed: '无法启用摄像头扫码',
+    cameraRequiresSecureContext: '当前环境不支持摄像头扫码，请使用 HTTPS 或 localhost 打开',
     qrCodeInvalid: '不是 OpenIM 支持的二维码',
     qrCodeUserNotFound: '未找到对应用户或二维码已失效',
     qrCodeGroupNotFound: '未找到对应群聊或二维码已失效',
