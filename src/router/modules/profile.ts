@@ -54,6 +54,11 @@ const profileRouters: Array<RouteRecordRaw> = [
     }),
     component: () => import('@pages/profile/changeNameOrRemark/index.vue'),
   },
+  {
+    path: '/myQrCode',
+    name: 'MyQrCode',
+    component: () => import('@pages/profile/myQrCode/index.vue'),
+  },
 ]
 
 export default profileRouters

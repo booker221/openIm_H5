@@ -2,6 +2,11 @@ export const setTMToken = (token: string) => localStorage.setItem('IM_TOKEN', to
 export const setChatToken = (token: string) =>
   localStorage.setItem('IM_CHAT_TOKEN', token)
 export const setTMUserID = (userID: string) => localStorage.setItem('IM_USERID', userID)
+export const setWsUrl = (url: string) => localStorage.setItem('wsUrl', url)
+export const setApiUrl = (url: string) => localStorage.setItem('apiUrl', url)
+export const setChatUrl = (url: string) => localStorage.setItem('chatUrl', url)
+export const setSelectedHost = (host: string) =>
+  localStorage.setItem('selectedHost', host)
 export const setAccessedFriendApplication = (list: string[]) =>
   localStorage.setItem(
     `${getIMUserID()}_accessedFriendApplications`,
@@ -28,6 +33,7 @@ export const clearIMProfile = () => {
 export const getIMToken = () => localStorage.getItem('IM_TOKEN')
 export const getChatToken = () => localStorage.getItem('IM_CHAT_TOKEN')
 export const getIMUserID = () => localStorage.getItem('IM_USERID')
+export const getSelectedHost = () => localStorage.getItem('selectedHost')
 export const getAccessedFriendApplication = () =>
   localStorage.getItem(`${getIMUserID()}_accessedFriendApplications`)
     ? JSON.parse(localStorage.getItem(`${getIMUserID()}_accessedFriendApplications`)!)

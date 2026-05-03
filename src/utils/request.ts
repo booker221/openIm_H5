@@ -18,6 +18,7 @@ serves.interceptors.request.use(
   (config) => {
     config.headers = config.headers || {}
     config.headers.operationID = uuidv4()
+    config.baseURL = getChatUrl()
     return config
   },
   (err) => Promise.reject(err),

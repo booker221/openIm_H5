@@ -21,7 +21,14 @@
       :icon="add_join_group"
       :title="$t('joinGroup')"
       :sub-title="$t('joinGroupDesc')"
+      border
       @click="$router.push({ path: 'searchToJoin', query: { isGroup: 'true' } })"
+    />
+    <AddMenuItem
+      :icon="add_scan"
+      :title="$t('scanQrCode')"
+      :sub-title="$t('scanQrCodeDesc')"
+      @click="$router.push('/scanQrCode')"
     />
   </div>
 </template>

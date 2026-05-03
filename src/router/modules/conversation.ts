@@ -29,6 +29,16 @@ const conversationRouters: Array<RouteRecordRaw> = [
     }),
     component: () => import('@pages/conversation/changeName/index.vue'),
   },
+  {
+    path: '/broadcastMessage',
+    name: 'BroadcastMessage',
+    component: () => import('@pages/conversation/broadcastMessage/index.vue'),
+  },
+  {
+    path: '/globalSearch',
+    name: 'GlobalSearch',
+    component: () => import('@pages/conversation/globalSearch/index.vue'),
+  },
 ]
 
 export default conversationRouters
