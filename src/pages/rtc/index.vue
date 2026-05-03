@@ -57,11 +57,13 @@ const room = useRoom({
   refConfig: config,
   onConnected: () => {
     isConnected.value = true;
+    clearTimer();
     nextTick(() => {
       resumeRoomPlayback();
     });
   },
   onDisconnected: () => {
+    clearTimer();
     connect.value = false;
     isConnected.value = false;
     config.connect = false;
@@ -85,6 +87,7 @@ const room = useRoom({
 });
 
 const connectRtc = (data?: any) => {
+  clearTimer();
   resumeRoomPlayback();
   if (data) {
     config.serverUrl = data.liveURL;
@@ -95,7 +98,11 @@ const connectRtc = (data?: any) => {
 };
 
 const timer = ref<NodeJS.Timeout>();
-const clearTimer = () => clearTimeout(timer.value!);
+const clearTimer = () => {
+  if (!timer.value) return;
+  clearTimeout(timer.value);
+  timer.value = undefined;
+};
 const checkTimeout = () => {
   if (timer.value) clearTimer();
   timer.value = setTimeout(() => {
@@ -169,6 +176,10 @@ const sendCustomSignal = async (recvID: string, customType: CustomType) => {
 onMounted(() => {
   resumeRoomPlayback();
   tryInvite();
+});
+
+onUnmounted(() => {
+  clearTimer();
 });
 </script>
 

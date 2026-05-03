@@ -20,14 +20,13 @@ import type { RtcInvite, WSEvent } from "@openim/wasm-client-sdk/lib/types/entit
 import { AuthData, InviteData } from "../data";
 import { IMSDK } from "@/utils/imCommon";
 import useUserStore from "@/store/modules/user";
-import { SessionType, CbEvents, MessageType } from "@openim/wasm-client-sdk";
+import { CbEvents, MessageType } from "@openim/wasm-client-sdk";
 import { CustomType } from "@/constants/enum";
 import { ExMessageItem } from "@/store/modules/message";
 import emitter from "@/utils/events";
 import { RemoteParticipant, Room, RoomEvent } from "livekit-client";
 import Connected from "./Connected.vue";
 import { getRtcConnectData } from "@api/im";
-import { v4 as uuidV4 } from "uuid";
 import { feedbackToast } from "@/utils/common";
 import { getMediaCaptureSupportIssue } from "@/utils/mediaCapture";
 
@@ -63,6 +62,30 @@ const showAccept = computed(() => {
   return !props.isConnected;
 });
 const showConnected = computed(() => props.isConnected || !isRecv.value);
+const remoteDisconnectTimer = ref<number | undefined>();
+const disconnectedParticipantIdentity = ref("");
+
+const isTargetParticipant = (identity: string) =>
+  identity === props.invitation.inviterUserID ||
+  identity === props.invitation.inviteeUserIDList[0];
+
+const clearRemoteDisconnectTimer = () => {
+  if (!remoteDisconnectTimer.value) return;
+  window.clearTimeout(remoteDisconnectTimer.value);
+  remoteDisconnectTimer.value = undefined;
+  disconnectedParticipantIdentity.value = "";
+};
+
+const closeRtcModal = () => {
+  clearRemoteDisconnectTimer();
+  emitter.emit("CLOSE_RTC_MODAL");
+};
+
+const finishCall = () => {
+  clearRemoteDisconnectTimer();
+  props.room.disconnect();
+  emitter.emit("CLOSE_RTC_MODAL");
+};
 
 
 const acceptInvitation = async () => {
@@ -102,11 +125,11 @@ const disconnect = () => {
       ? CustomType.CallingReject
       : CustomType.CallingCancel;
     props.sendCustomSignal(recvID, customType);
-    emitter.emit("CLOSE_RTC_MODAL");
+    closeRtcModal();
     return;
   }
   props.sendCustomSignal(recvID, CustomType.CallingHungup);
-  emitter.emit("CLOSE_RTC_MODAL");
+  closeRtcModal();
 };
 
 const acceptHandler = async ({ roomID }: RtcInvite) => {
@@ -116,32 +139,41 @@ const acceptHandler = async ({ roomID }: RtcInvite) => {
 
 const rejectHandler = ({ roomID }: RtcInvite) => {
   if (props.invitation.roomID !== roomID) return;
-  emitter.emit("CLOSE_RTC_MODAL");
+  closeRtcModal();
 };
 
 const hangupHandler = ({ roomID }: RtcInvite) => {
   if (props.invitation.roomID !== roomID) return;
-  props.room.disconnect();
-  emitter.emit("CLOSE_RTC_MODAL");
+  finishCall();
 };
 
 const cancelHandler = ({ roomID }: RtcInvite) => {
   if (props.invitation.roomID !== roomID) return;
   if (!props.isWaiting) return;
-  emitter.emit("CLOSE_RTC_MODAL");
+  closeRtcModal();
 };
 
 const participantDisconnectedHandler = (
   remoteParticipant: RemoteParticipant
 ) => {
   const identity = remoteParticipant.identity;
-  if (
-    identity === props.invitation.inviterUserID ||
-    identity === props.invitation.inviteeUserIDList[0]
-  ) {
-    props.room.disconnect();
-    emitter.emit("CLOSE_RTC_MODAL");
-  }
+  if (!isTargetParticipant(identity)) return;
+
+  clearRemoteDisconnectTimer();
+  disconnectedParticipantIdentity.value = identity;
+  remoteDisconnectTimer.value = window.setTimeout(() => {
+    const participantStillMissing = !props.room.getParticipantByIdentity(identity);
+    clearRemoteDisconnectTimer();
+
+    if (participantStillMissing) {
+      finishCall();
+    }
+  }, 5000) as number;
+};
+
+const participantConnectedHandler = (remoteParticipant: RemoteParticipant) => {
+  if (remoteParticipant.identity !== disconnectedParticipantIdentity.value) return;
+  clearRemoteDisconnectTimer();
 };
 
 const newMessageHandler = ({ data }: WSEvent<ExMessageItem[]>) => {
@@ -173,13 +205,16 @@ onMounted(() => {
     RoomEvent.ParticipantDisconnected,
     participantDisconnectedHandler
   );
+  props.room.on(RoomEvent.ParticipantConnected, participantConnectedHandler);
 });
 
 onUnmounted(() => {
+  clearRemoteDisconnectTimer();
   IMSDK.off(CbEvents.OnRecvNewMessages, newMessageHandler);
   props.room.off(
     RoomEvent.ParticipantDisconnected,
     participantDisconnectedHandler
   );
+  props.room.off(RoomEvent.ParticipantConnected, participantConnectedHandler);
 });
 </script>
