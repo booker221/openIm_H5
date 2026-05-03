@@ -1,7 +1,6 @@
 <template>
   <RtcLayout
     :inviteData="inviteData"
-    :authData="config"
     :connect="connect"
     :isConnected="isConnected"
     @connectRtc="connectRtc"
@@ -11,6 +10,7 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick } from "vue";
 import { useRoom } from "@/utils/open-im-rtc";
 import { IMSDK } from "@/utils/imCommon";
 import { InviteData } from "./data";
@@ -20,7 +20,8 @@ import emitter from "@/utils/events";
 import { feedbackToast } from "@/utils/common";
 import { CustomType } from "@/constants/enum";
 import { getRtcConnectData } from "@/api/im";
-import { v4 as uuidV4 } from "uuid";
+import { MediaDeviceFailure } from "livekit-client";
+import { getMediaCaptureSupportIssue } from "@/utils/mediaCapture";
 
 type RtcProps = {
   inviteData: InviteData;
@@ -43,10 +44,22 @@ const isRecv = computed(
   () => userStore.selfInfo.userID !== props.inviteData.invitation?.inviterUserID
 );
 
+const resumeRoomPlayback = async () => {
+  if (!room.value) return;
+
+  await Promise.allSettled([
+    room.value.startAudio(),
+    room.value.startVideo(),
+  ]);
+};
+
 const room = useRoom({
   refConfig: config,
   onConnected: () => {
     isConnected.value = true;
+    nextTick(() => {
+      resumeRoomPlayback();
+    });
   },
   onDisconnected: () => {
     connect.value = false;
@@ -54,11 +67,25 @@ const room = useRoom({
     config.connect = false;
   },
   onError: (error) => {
-    console.error(error);
+    feedbackToast({ message: t("rtc.joinFailed"), error });
+  },
+  onMediaDeviceFailure: (failure) => {
+    feedbackToast({
+      message:
+        failure === MediaDeviceFailure.PermissionDenied
+          ? t("rtc.mediaPermissionDenied")
+          : failure === MediaDeviceFailure.DeviceInUse
+          ? t("rtc.mediaDeviceInUse")
+          : failure === MediaDeviceFailure.NotFound
+          ? t("rtc.mediaDeviceError")
+          : t("rtc.mediaUnsupported"),
+      error: true,
+    });
   },
 });
 
 const connectRtc = (data?: any) => {
+  resumeRoomPlayback();
   if (data) {
     config.serverUrl = data.liveURL;
     config.token = data.token;
@@ -86,8 +113,22 @@ const checkTimeout = () => {
 const tryInvite = async () => {
   if (!isRecv.value) {
     try {
+      const captureSupportIssue = getMediaCaptureSupportIssue();
+      if (captureSupportIssue) {
+        feedbackToast({
+          message: t(
+            captureSupportIssue === "insecure_context"
+              ? "rtc.mediaSecureContext"
+              : "rtc.mediaUnsupported"
+          ),
+          error: true,
+        });
+        emitter.emit("CLOSE_RTC_MODAL");
+        return;
+      }
+
       const { data } = await getRtcConnectData(
-        uuidV4(),
+        props.inviteData.invitation!.roomID,
         userStore.selfInfo.userID
       );
       config.serverUrl = data.serverUrl;
@@ -126,6 +167,7 @@ const sendCustomSignal = async (recvID: string, customType: CustomType) => {
 };
 
 onMounted(() => {
+  resumeRoomPlayback();
   tryInvite();
 });
 </script>

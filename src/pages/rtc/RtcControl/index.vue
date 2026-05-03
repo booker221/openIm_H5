@@ -28,6 +28,8 @@ import { RemoteParticipant, Room, RoomEvent } from "livekit-client";
 import Connected from "./Connected.vue";
 import { getRtcConnectData } from "@api/im";
 import { v4 as uuidV4 } from "uuid";
+import { feedbackToast } from "@/utils/common";
+import { getMediaCaptureSupportIssue } from "@/utils/mediaCapture";
 
 type IRtcControlEmits = {
   (event: "connectRtc", data?: AuthData): void;
@@ -46,6 +48,7 @@ const emit = defineEmits<IRtcControlEmits>();
 const props = defineProps<IRtcControlProps>();
 
 const userStore = useUserStore();
+const { t } = useI18n();
 
 const isRecv = computed(
   () => userStore.selfInfo.userID !== props.invitation?.inviterUserID
@@ -64,6 +67,20 @@ const showConnected = computed(() => props.isConnected || !isRecv.value);
 
 const acceptInvitation = async () => {
   try {
+    const captureSupportIssue = getMediaCaptureSupportIssue();
+    if (captureSupportIssue) {
+      feedbackToast({
+        message: t(
+          captureSupportIssue === "insecure_context"
+            ? "rtc.mediaSecureContext"
+            : "rtc.mediaUnsupported"
+        ),
+        error: true,
+      });
+      return;
+    }
+
+    await Promise.allSettled([props.room.startAudio(), props.room.startVideo()]);
     await props.sendCustomSignal(recvID, CustomType.CallingAccept);
     const { data } = await getRtcConnectData(
       props.invitation.roomID,

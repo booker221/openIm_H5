@@ -3,6 +3,9 @@ import useConversationStore from '@/store/modules/conversation'
 import { v4 as uuidV4 } from 'uuid'
 import { SessionType } from '@openim/wasm-client-sdk'
 import emitter from '@/utils/events'
+import { feedbackToast } from '@/utils/common'
+import { getMediaCaptureSupportIssue } from '@/utils/mediaCapture'
+import { i18nt } from '@/i18n'
 
 export const useInviteRtc = () => {
   const userStore = useUserStore()
@@ -16,6 +19,19 @@ export const useInviteRtc = () => {
   }
 
   const inviteRtc = async (type: ChatFooterActionType, userIDList: string[]) => {
+    const captureSupportIssue = getMediaCaptureSupportIssue()
+    if (captureSupportIssue) {
+      feedbackToast({
+        message: i18nt(
+          captureSupportIssue === 'insecure_context'
+            ? 'rtc.mediaSecureContext'
+            : 'rtc.mediaUnsupported',
+        ),
+        error: true,
+      })
+      return
+    }
+
     const mediaType = type === ChatFooterActionType.VoiceCall ? 'audio' : 'video'
 
     emitter.emit('OPEN_RTC_MODAL', {

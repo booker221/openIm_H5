@@ -633,6 +633,16 @@ export const lang = {
     handleByOtherDevice: 'Handled on Another Device',
     joinFailed: 'Join Failed!',
     invitationFailed: 'Failed to Send Invitation!',
+    mediaSecureContext:
+      'Voice and video calling requires HTTPS or localhost in the current environment',
+    mediaUnsupported:
+      'The current browser does not support the media capabilities required for calling',
+    mediaDeviceError: 'Unable to access the microphone or camera. Check browser permissions.',
+    mediaPermissionDenied:
+      'Microphone or camera permission was denied. Allow access in the browser and try again.',
+    mediaDeviceInUse:
+      'The microphone or camera is being used by another application. Please try again later.',
+    audioResumeHint: 'The browser blocked call audio. Tap the speaker button to resume playback.',
     micOpen: 'Microphone On',
     micClose: 'Microphone Off',
     accept: 'Accept',

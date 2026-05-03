@@ -11,6 +11,7 @@ import {
   VideoCaptureOptions,
 } from 'livekit-client'
 import { log, setupLiveKitRoom } from '@livekit/components-core'
+import { ensureGetUserMediaSupport } from '@/utils/mediaCapture'
 
 interface RefConfig {
   serverUrl: string | undefined
@@ -56,9 +57,19 @@ export function useRoom(props: LiveKitRoomProps) {
     console.log('onSignalConnected')
 
     const localP = room.value?.localParticipant
+    const canCaptureUserMedia =
+      !props.refConfig.audio && !props.refConfig.video && !props.refConfig.screen
+        ? true
+        : ensureGetUserMediaSupport()
 
     log.debug('trying to publish local tracks')
-    Promise.all([
+    if (!canCaptureUserMedia) {
+      log.warn('getUserMedia is not available in the current environment')
+      onMediaDeviceFailure?.(MediaDeviceFailure.Other)
+      return
+    }
+
+    const publishTasks = [
       localP?.setMicrophoneEnabled(
         !!props.refConfig.audio,
         typeof props.refConfig.audio !== 'boolean' ? props.refConfig.audio : undefined,
@@ -73,9 +84,24 @@ export function useRoom(props: LiveKitRoomProps) {
           ? props.refConfig.screen
           : undefined,
       ),
-    ]).catch((e) => {
-      log.warn(e)
-      onError?.(e)
+    ].filter(Boolean) as Promise<unknown>[]
+
+    Promise.allSettled(publishTasks).then((results) => {
+      const rejectedResult = results.find(
+        (result): result is PromiseRejectedResult => result.status === 'rejected',
+      )
+
+      if (!rejectedResult) return
+
+      log.warn(rejectedResult.reason)
+
+      const mediaDeviceFailure = MediaDeviceFailure.getFailure(rejectedResult.reason)
+      if (mediaDeviceFailure) {
+        onMediaDeviceFailure?.(mediaDeviceFailure)
+        return
+      }
+
+      onError?.(rejectedResult.reason)
     })
   }
 
