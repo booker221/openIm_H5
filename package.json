@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite --force --host",
     "build": "vue-tsc --noEmit && vite build",
-    "build:hbuilder": "vue-tsc --noEmit && vite build --mode hbuilder",
     "preview": "vite preview",
     "format": "prettier --write .",
     "postinstall": "patch-package"

@@ -54,23 +54,30 @@
 </template>
 
 <script setup lang="ts">
-import add_friend from '@/assets/images/conversation/add_friend.png'
-import add_group from '@/assets/images/conversation/add_group.png'
-import create_group from '@/assets/images/conversation/create_group.png'
 import Avatar from '@/components/Avatar/index.vue'
 import add from '@/assets/images/conversation/add.png'
 import loading from '@/assets/images/conversation/loading.png'
 import sync_error from '@assets/images/conversation/sync_error.png'
+import add_search_user from '@assets/images/contact/add_search_user.png'
+import add_join_group from '@assets/images/contact/add_join_group.png'
+import add_create_group from '@assets/images/contact/add_create_group.png'
+import add_scan from '@assets/images/contact/add_scan.png'
+import mass_msg from '@assets/images/contact/mass_msg.png'
 import { PopoverAction } from 'vant'
 import useUserStore from '@/store/modules/user'
 import { IMSDK } from '@/utils/imCommon'
-import { CbEvents } from '@openim/wasm-client-sdk'
-import { GroupType } from '@openim/wasm-client-sdk'
+import { CbEvents, GroupType, SessionType } from '@openim/wasm-client-sdk'
+import useAppConfigStore from '@/store/modules/appConfig'
+import { feedbackToast } from '@/utils/common'
+import useConversationToggle from '@/hooks/useConversationToggle'
 
 enum ActionEnum {
   AddFriend,
   AddGroup,
-  LaunchGroup,
+  CreateGroup,
+  ScanCode,
+  BroadcastMessage,
+  MessageToSelf,
 }
 
 enum connectStateEnum {
@@ -79,34 +86,74 @@ enum connectStateEnum {
   Failed,
 }
 
-const { t, locale } = useI18n()
+type ConversationPopoverAction = PopoverAction & {
+  actionType: ActionEnum
+}
 
-const conversationTopMoreActions: PopoverAction[] = [
-  {
-    text: t('addFriend'),
-    icon: add_friend,
-  },
-  {
-    text: t('addGroup'),
-    icon: add_group,
-  },
-  {
-    text: t('launchGroup'),
-    icon: create_group,
-  },
-]
-
-watch(locale, () => {
-  conversationTopMoreActions[1].text = t('addFriend')
-  conversationTopMoreActions[2].text = t('addGroup')
-  conversationTopMoreActions[3].text = t('launchGroup')
-})
+const { t } = useI18n()
 
 const userStore = useUserStore()
+const appConfigStore = useAppConfigStore()
 const router = useRouter()
+const { toSpecifiedConversation } = useConversationToggle()
 
 const showPopover = ref(false)
 const connectState = ref(connectStateEnum.Success)
+
+const userType = computed(() => Number((userStore.storeSelfInfo as any).userType ?? 1))
+const friendsSwitch = computed(() => !!appConfigStore.storeAppConfig?.friends_switch)
+const groupsSwitch = computed(() => !!appConfigStore.storeAppConfig?.groups_switch)
+const canCreateGroup = computed(() => userType.value !== 0)
+const canAddFriend = computed(() => canCreateGroup.value || friendsSwitch.value)
+const canAddGroup = computed(() => canCreateGroup.value || groupsSwitch.value)
+
+const conversationTopMoreActions = computed<ConversationPopoverAction[]>(() => {
+  const actions: ConversationPopoverAction[] = []
+
+  if (canAddFriend.value) {
+    actions.push({
+      text: t('addFriend'),
+      icon: add_search_user,
+      actionType: ActionEnum.AddFriend,
+    })
+  }
+
+  if (canAddGroup.value) {
+    actions.push({
+      text: t('addGroupChat'),
+      icon: add_join_group,
+      actionType: ActionEnum.AddGroup,
+    })
+  }
+
+  if (canCreateGroup.value) {
+    actions.push({
+      text: t('createGroup'),
+      icon: add_create_group,
+      actionType: ActionEnum.CreateGroup,
+    })
+  }
+
+  actions.push(
+    {
+      text: t('scanQr'),
+      icon: add_scan,
+      actionType: ActionEnum.ScanCode,
+    },
+    {
+      text: t('broadcastMessage'),
+      icon: mass_msg,
+      actionType: ActionEnum.BroadcastMessage,
+    },
+    {
+      text: t('messageToSelf'),
+      icon: add_search_user,
+      actionType: ActionEnum.MessageToSelf,
+    },
+  )
+
+  return actions
+})
 
 const setConnectLoading = () => (connectState.value = connectStateEnum.Loading)
 const setConnectSuccess = () => (connectState.value = connectStateEnum.Success)
@@ -124,23 +171,37 @@ onBeforeUnmount(() => {
   IMSDK.off(CbEvents.OnConnectFailed, setConnectFailed)
 })
 
-const selectMenu = (_: PopoverAction, idx: ActionEnum) => {
-  switch (idx) {
+const selectMenu = async (action: ConversationPopoverAction) => {
+  switch (action.actionType) {
     case ActionEnum.AddFriend:
     case ActionEnum.AddGroup:
       router.push({
         path: 'searchToJoin',
         query: {
-          isGroup: String(idx === ActionEnum.AddGroup),
+          isGroup: String(action.actionType === ActionEnum.AddGroup),
         },
       })
       break
-    case ActionEnum.LaunchGroup:
+    case ActionEnum.CreateGroup:
       router.push({
         path: 'createGroup',
         query: {
           groupType: GroupType.WorkingGroup,
         },
+      })
+      break
+    case ActionEnum.ScanCode:
+    case ActionEnum.BroadcastMessage:
+      feedbackToast({ message: t('messageTip.featureNotSupportedOnH5'), error: true })
+      break
+    case ActionEnum.MessageToSelf:
+      if (!userStore.storeSelfInfo.userID) {
+        feedbackToast({ message: t('messageTip.getUserInfoFailed'), error: true })
+        return
+      }
+      await toSpecifiedConversation({
+        sourceID: userStore.storeSelfInfo.userID,
+        sessionType: SessionType.Single,
       })
       break
     default:
