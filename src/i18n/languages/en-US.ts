@@ -358,7 +358,6 @@ export const lang = {
   },
   profileMenu: {
     personalInformation: 'My Information',
-    myQrCode: 'My QR Code',
     myWallet: 'My Wallet',
     receivingAccount: 'Receiving Account',
     realNameAuth: 'Real Name Authentication',

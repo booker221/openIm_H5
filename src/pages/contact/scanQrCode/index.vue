@@ -1,10 +1,6 @@
 <template>
   <div class="page_container">
-    <NavBar :title="$t('scanQrCode')">
-      <span class="text-sm text-primary" @click="router.push('/myQrCode')">
-        {{ $t('profileMenu.myQrCode') }}
-      </span>
-    </NavBar>
+    <NavBar :title="$t('scanQrCode')" />
 
     <div class="flex-1 overflow-y-auto px-[22px] py-4">
       <div class="rounded-[24px] bg-[#0C1C33] p-4 text-white">

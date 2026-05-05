@@ -45,9 +45,6 @@ const extractUserIdFromUrl = (content: string) => {
   )
 }
 
-export const buildFriendQrContent = (userID: string) =>
-  `${OPENIM_FRIEND_QR_PREFIX}${userID}`
-
 export const buildGroupQrContent = (groupID: string) =>
   `${OPENIM_GROUP_QR_PREFIX}${groupID}`
 

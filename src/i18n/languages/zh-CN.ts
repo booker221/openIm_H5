@@ -356,7 +356,6 @@ export const lang = {
   },
   profileMenu: {
     personalInformation: '我的信息',
-    myQrCode: '我的二维码',
     myWallet: '我的钱包',
     receivingAccount: '收款账户',
     realNameAuth: '实名认证',

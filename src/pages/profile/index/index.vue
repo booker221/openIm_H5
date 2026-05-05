@@ -61,7 +61,6 @@ import Avatar from '@/components/Avatar/index.vue'
 import back from '@assets/images/profile/back.png'
 import copy_icon from '@assets/images/profile/copy.png'
 import bg from '@assets/images/profile/bg.png'
-import qr_code from '@assets/images/profile/qr_code.png'
 
 import { showConfirmDialog, showToast } from 'vant'
 import useUserStore from '@/store/modules/user'
@@ -92,12 +91,6 @@ const profileMenus = computed(() => {
       icon: 'contact',
       title: t('profileMenu.personalInformation'),
       route: '/selfInfoDetails',
-    },
-    {
-      icon: '',
-      imageIcon: qr_code,
-      title: t('profileMenu.myQrCode'),
-      route: '/myQrCode',
     },
   ]
 
