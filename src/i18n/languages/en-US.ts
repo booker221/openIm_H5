@@ -391,6 +391,18 @@ export const lang = {
     newMessageSound: 'New Message Sound',
     disallowAddMe: 'Disallow Add Me as Friend',
   },
+  aboutPage: {
+    checkNewVersion: 'Check for Updates',
+    uploadAllLogs: 'Upload All Logs',
+    clearCache: 'Clear Cache',
+    cacheSizeUnknown: '-',
+    currentLatestVersion: 'You are already on the latest version: {version}',
+    logsExported: 'Direct upload is not available on H5 yet. Diagnostic info was exported.',
+    clearCacheConfirm: 'Clear local cache now? Your login information will be kept.',
+    clearingCache: 'Clearing...',
+    clearCacheSuccess: 'Cache cleared. The page will reload.',
+    clearCacheFailed: 'Failed to clear cache',
+  },
   messageDesc: {
     imageMessage: '[Image Message]',
     videoMessage: '[Video Message]',

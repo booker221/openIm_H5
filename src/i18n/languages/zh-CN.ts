@@ -389,6 +389,18 @@ export const lang = {
     newMessageSound: '新消息提示音',
     disallowAddMe: '禁止添加我为好友',
   },
+  aboutPage: {
+    checkNewVersion: '检查新版本',
+    uploadAllLogs: '上传全部日志',
+    clearCache: '清理缓存',
+    cacheSizeUnknown: '-',
+    currentLatestVersion: '当前已是最新版本：{version}',
+    logsExported: 'H5 暂未接入直接上传，已导出调试信息',
+    clearCacheConfirm: '确认清理本地缓存吗？已登录信息会保留。',
+    clearingCache: '清理中...',
+    clearCacheSuccess: '缓存已清理，页面将重新加载',
+    clearCacheFailed: '清理缓存失败',
+  },
   messageDesc: {
     imageMessage: '[图片消息]',
     videoMessage: '[视频消息]',
