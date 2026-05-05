@@ -7,6 +7,7 @@ import { BusinessUserInfo } from '@/api/data'
 import { getBusinessInfo } from '@/api/user'
 import { feedbackToast, filterEmptyValue } from '@/utils/common'
 import { clearIMProfile } from '@/utils/storage'
+import { resetIMLoginState } from '@/utils/imLogin'
 import useContactStore from './contact'
 import useConversationStore from './conversation'
 import { i18nt } from '@/i18n'
@@ -58,11 +59,15 @@ const useStore = defineStore('user', {
       const useConversatione = useConversationStore()
       const useContact = useContactStore()
 
-      if (!force) await IMSDK.logout()
-      clearIMProfile()
-      this.selfInfo = {} as BusinessUserInfo
-      useConversatione.clearConversationStore()
-      useContact.clearContactStore()
+      try {
+        if (!force) await IMSDK.logout()
+      } finally {
+        resetIMLoginState()
+        clearIMProfile()
+        this.selfInfo = {} as BusinessUserInfo
+        useConversatione.clearConversationStore()
+        useContact.clearContactStore()
+      }
     },
   },
 })

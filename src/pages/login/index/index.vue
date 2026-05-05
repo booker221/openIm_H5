@@ -110,6 +110,8 @@ import type { PickerConfirmEventParams } from 'vant'
 import { login } from '@/api/login'
 import countryCode from '@/utils/areaCode'
 import { setIMProfile } from '@/utils/storage'
+import { feedbackToast } from '@/utils/common'
+import { ensureIMLogin, resetIMLoginState } from '@/utils/imLogin'
 
 const version = process.env.VERSION
 type LoginMode = 'phone' | 'account'
@@ -219,9 +221,14 @@ const onSubmit = async () => {
 
     persistRememberedPassword()
     setIMProfile({ chatToken, imToken, userID })
-    router.push('/conversation')
+    resetIMLoginState()
+    const isLogged = await ensureIMLogin()
+    if (!isLogged) {
+      throw new Error('IM login failed')
+    }
+    router.replace('/conversation')
   } catch (error) {
-    // feedbackToast({ message: t('messageTip.loginFailed'), error })
+    feedbackToast({ message: t('messageTip.loginFailed'), error })
   }
   loading.value = false
 }

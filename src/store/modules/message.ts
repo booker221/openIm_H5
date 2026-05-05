@@ -1,5 +1,6 @@
 import { feedbackToast } from '@utils/common'
 import { IMSDK } from '@/utils/imCommon'
+import { ensureIMLogin } from '@/utils/imLogin'
 import type { MessageItem } from '@openim/wasm-client-sdk/lib/types/entity'
 import { GetAdvancedHistoryMsgParams } from '@openim/wasm-client-sdk/lib/types/params'
 import { defineStore } from 'pinia'
@@ -82,6 +83,10 @@ const useStore = defineStore('message', {
     ): Promise<GetHistoryMessageListFromReqResp> {
       const isFirstPage = params.startClientMsgID === ''
       try {
+        const isLogged = await ensureIMLogin()
+        if (!isLogged) {
+          throw new Error('IM login not ready')
+        }
         const { data: tmpData } = await IMSDK.getAdvancedHistoryMessageList(params)
         this.historyMessageList = mergeUniqueMessages([
           ...tmpData.messageList,

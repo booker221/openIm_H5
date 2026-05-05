@@ -21,71 +21,44 @@
 <script setup lang="ts" name="tabbar">
 import Tabbar from './Tabbar.vue'
 import useConversationStore from '@/store/modules/conversation'
-import { AllowType, LoginStatus } from '@openim/wasm-client-sdk'
+import { AllowType } from '@openim/wasm-client-sdk'
 import useContactStore from '@/store/modules/contact'
 import { useGlobalEvent } from './useGlobalEvent'
-import {
-  getApiUrl,
-  getIMToken,
-  getIMUserID,
-  getLogLevel,
-  getWsUrl,
-} from '@/utils/storage'
-import { IMSDK, initStore } from '@/utils/imCommon'
+import { getIMToken, getIMUserID } from '@/utils/storage'
+import { initStore } from '@/utils/imCommon'
+import { ensureIMLogin } from '@/utils/imLogin'
 import useUserStore from '@/store/modules/user'
-import emitter from '@/utils/events'
 
 useGlobalEvent()
 const userStore = useUserStore()
 const router = useRouter()
+const hasInitializedStore = ref(false)
 
 const showProgress = computed(
   () => userStore.reinstall && userStore.progress > 0 && userStore.progress < 100,
 )
 
 onMounted(() => {
-  loginCheck()
+  bootstrapIM()
 })
 
-router.beforeEach(async (to, from, next) => {
-  if (to.path === '/getCode') {
-    next()
-    return
-  }
-  if (from.path === '/login') {
-    const { data } = await IMSDK.getLoginStatus()
-    if (data === LoginStatus.Logout) {
-      loginCheck()
-    }
-  }
-  next()
-})
-
-const loginCheck = () => {
+const bootstrapIM = async () => {
   const IMToken = getIMToken()
   const IMUserID = getIMUserID()
   if (!IMToken || !IMUserID) {
-    router.push('/login')
+    router.replace('/login')
     return
   }
-  tryLogin()
-}
 
-const tryLogin = async () => {
-  const IMToken = getIMToken()
-  const IMUserID = getIMUserID()
-  try {
-    await IMSDK.login({
-      userID: IMUserID!,
-      token: IMToken!,
-      apiAddr: getApiUrl(),
-      wsAddr: getWsUrl(),
-      platformID: 5,
-      logLevel: Number(getLogLevel()),
-    })
+  const isLogged = await ensureIMLogin()
+  if (!isLogged) {
+    router.replace('/login')
+    return
+  }
+
+  if (!hasInitializedStore.value) {
     initStore()
-  } catch (error) {
-    router.push('/login')
+    hasInitializedStore.value = true
   }
 }
 

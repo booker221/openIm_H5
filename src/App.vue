@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { initializeAudio } from './utils/common'
-import { IMSDK } from '@/utils/imCommon'
+import { setAppBackgroundStatusSafely } from '@/utils/imLogin'
 
 initializeAudio()
 
@@ -16,10 +16,10 @@ document.addEventListener('contextmenu', function (event) {
 
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible') {
-    IMSDK.setAppBackgroundStatus(false)
+    void setAppBackgroundStatusSafely(false)
   }
   if (document.visibilityState === 'hidden') {
-    IMSDK.setAppBackgroundStatus(true)
+    void setAppBackgroundStatusSafely(true)
   }
 })
 </script>
