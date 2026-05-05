@@ -7,12 +7,18 @@ import {
   getWsUrl,
 } from './storage'
 import { LoginStatus } from '@openim/wasm-client-sdk'
+import useUserStore from '@/store/modules/user'
+import useConversationStore from '@/store/modules/conversation'
+import useContactStore from '@/store/modules/contact'
+import useAppConfigStore from '@/store/modules/appConfig'
 
 const LOGIN_STATUS_RETRY_TIMES = 40
 const LOGIN_STATUS_RETRY_DELAY = 300
 
 let loginPromise: Promise<boolean> | null = null
 let loginPromiseUserID = ''
+let storeInitPromise: Promise<boolean> | null = null
+let storeInitUserID = ''
 
 const wait = (ms: number) =>
   new Promise((resolve) => {
@@ -30,6 +36,8 @@ const getCurrentCredentials = () => ({
 export const resetIMLoginState = () => {
   loginPromise = null
   loginPromiseUserID = ''
+  storeInitPromise = null
+  storeInitUserID = ''
 }
 
 export const getIMLoginStatusSafe = async (): Promise<LoginStatus> => {
@@ -101,9 +109,62 @@ export const ensureIMLogin = async () => {
   return loginPromise
 }
 
-export const setAppBackgroundStatusSafely = async (isBackground: boolean) => {
+const bootstrapIMStores = async () => {
+  const userStore = useUserStore()
+  const conversationStore = useConversationStore()
+  const contactStore = useContactStore()
+  const appConfigStore = useAppConfigStore()
+
+  const tasks = [
+    userStore.getSelfInfoFromReq(),
+    conversationStore.getUnReadCountFromReq(),
+    conversationStore.getConversationListFromReq(),
+    contactStore.getBlackListFromReq(),
+    contactStore.getRecvFriendApplicationListFromReq(),
+    contactStore.getSendFriendApplicationListFromReq(),
+    contactStore.getRecvGroupApplicationListFromReq(),
+    contactStore.getSendGroupApplicationListFromReq(),
+    appConfigStore.fetchAppConfig(true),
+  ]
+
+  await Promise.allSettled(tasks)
+
+  return Boolean(userStore.storeSelfInfo.userID)
+}
+
+export const ensureIMReady = async () => {
+  const { userID } = getCurrentCredentials()
   const isLogged = await ensureIMLogin()
-  if (!isLogged) return
+
+  if (!isLogged || !userID) {
+    return false
+  }
+
+  const userStore = useUserStore()
+  if (userStore.storeSelfInfo.userID === userID) {
+    return true
+  }
+
+  if (storeInitPromise && storeInitUserID === userID) {
+    return storeInitPromise
+  }
+
+  if (storeInitUserID !== userID) {
+    storeInitPromise = null
+    storeInitUserID = ''
+  }
+
+  storeInitUserID = userID
+  storeInitPromise = bootstrapIMStores().finally(() => {
+    storeInitPromise = null
+  })
+
+  return storeInitPromise
+}
+
+export const setAppBackgroundStatusSafely = async (isBackground: boolean) => {
+  const isReady = await ensureIMReady()
+  if (!isReady) return
 
   try {
     await IMSDK.setAppBackgroundStatus(isBackground)

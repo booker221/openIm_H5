@@ -33,11 +33,13 @@
       <DetailInfoItem
         :lable="$t('cellphone')"
         :content="userStore.storeSelfInfo.phoneNumber"
+        @click="copyPhoneNumber"
       />
       <DetailInfoItem
         arrow
         :lable="$t('email')"
         :content="userStore.storeSelfInfo.email"
+        @click="editEmail"
       />
     </div>
 
@@ -86,10 +88,11 @@ import dayjs from 'dayjs'
 import {
   closeToast,
   showLoadingToast,
+  showToast,
   UploaderFileListItem,
   UploaderInstance,
 } from 'vant'
-import { feedbackToast, getFileType } from '@/utils/common'
+import { feedbackToast, getFileType, useCopy } from '@/utils/common'
 import { updateBusinessInfo } from '@/api/user'
 import { BusinessUserInfo } from '@/api/data'
 import { IMSDK } from '@/utils/imCommon'
@@ -100,6 +103,8 @@ const userStore = useUserStore()
 const uploaderRef = ref<UploaderInstance>()
 const showGenderPicker = ref(false)
 const showBirthPicker = ref(false)
+const router = useRouter()
+const { copy } = useCopy()
 
 const genderActions = [
   {
@@ -133,6 +138,25 @@ const currentDate = computed(() =>
 
 const chooseAvatar = () => {
   uploaderRef.value?.chooseFile()
+}
+
+const copyPhoneNumber = () => {
+  const phoneNumber = userStore.storeSelfInfo.phoneNumber?.trim()
+  if (!phoneNumber) {
+    showToast(t('messageTip.copyFailed'))
+    return
+  }
+  copy(phoneNumber)
+}
+
+const editEmail = () => {
+  router.push({
+    path: '/editMyInfo',
+    query: {
+      field: 'email',
+      maxLength: '30',
+    },
+  })
 }
 
 const updateUserInfo = (info: Partial<BusinessUserInfo>) => {

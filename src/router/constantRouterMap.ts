@@ -10,7 +10,7 @@ import contactRouters from './modules/contact'
 import profileRouters from './modules/profile'
 import loginRouters from './modules/login'
 import { getIMToken, getIMUserID } from '@/utils/storage'
-import { ensureIMLogin } from '@/utils/imLogin'
+import { ensureIMReady } from '@/utils/imLogin'
 
 const loginCheck = async (
   to: RouteLocationNormalized,
@@ -24,8 +24,8 @@ const loginCheck = async (
     return
   }
 
-  const isLogged = await ensureIMLogin()
-  if (!isLogged) {
+  const isReady = await ensureIMReady()
+  if (!isReady) {
     next('login')
     return
   }

@@ -25,14 +25,12 @@ import { AllowType } from '@openim/wasm-client-sdk'
 import useContactStore from '@/store/modules/contact'
 import { useGlobalEvent } from './useGlobalEvent'
 import { getIMToken, getIMUserID } from '@/utils/storage'
-import { initStore } from '@/utils/imCommon'
-import { ensureIMLogin } from '@/utils/imLogin'
+import { ensureIMReady } from '@/utils/imLogin'
 import useUserStore from '@/store/modules/user'
 
 useGlobalEvent()
 const userStore = useUserStore()
 const router = useRouter()
-const hasInitializedStore = ref(false)
 
 const showProgress = computed(
   () => userStore.reinstall && userStore.progress > 0 && userStore.progress < 100,
@@ -50,15 +48,10 @@ const bootstrapIM = async () => {
     return
   }
 
-  const isLogged = await ensureIMLogin()
-  if (!isLogged) {
+  const isReady = await ensureIMReady()
+  if (!isReady) {
     router.replace('/login')
     return
-  }
-
-  if (!hasInitializedStore.value) {
-    initStore()
-    hasInitializedStore.value = true
   }
 }
 
