@@ -182,7 +182,6 @@ import sync_error from '@assets/images/conversation/sync_error.png'
 import add_search_user from '@assets/images/contact/add_search_user.png'
 import add_join_group from '@assets/images/contact/add_join_group.png'
 import add_create_group from '@assets/images/contact/add_create_group.png'
-import add_scan from '@assets/images/contact/add_scan.png'
 import mass_msg from '@assets/images/contact/mass_msg.png'
 import { PopoverAction, showToast } from 'vant'
 import useUserStore from '@/store/modules/user'
@@ -196,7 +195,6 @@ enum ActionEnum {
   AddFriend,
   AddGroup,
   CreateGroup,
-  ScanCode,
   BroadcastMessage,
   MessageToSelf,
 }
@@ -262,11 +260,6 @@ const conversationTopMoreActions = computed<ConversationPopoverAction[]>(() => {
   }
 
   actions.push(
-    {
-      text: t('scanQr'),
-      icon: add_scan,
-      actionType: ActionEnum.ScanCode,
-    },
     {
       text: t('broadcastMessage'),
       icon: mass_msg,
@@ -373,9 +366,6 @@ const selectMenu = async (action: ConversationPopoverAction) => {
           groupType: GroupType.WorkingGroup,
         },
       })
-      break
-    case ActionEnum.ScanCode:
-      router.push('/scanQrCode')
       break
     case ActionEnum.BroadcastMessage:
       router.push('/broadcastMessage')

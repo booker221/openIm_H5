@@ -24,12 +24,6 @@
       border
       @click="$router.push({ path: 'searchToJoin', query: { isGroup: 'true' } })"
     />
-    <AddMenuItem
-      :icon="add_scan"
-      :title="$t('scanQrCode')"
-      :sub-title="$t('scanQrCodeDesc')"
-      @click="$router.push('/scanQrCode')"
-    />
   </div>
 </template>
 
@@ -39,7 +33,6 @@ import AddMenuItem from './components/AddMenuItem.vue'
 import add_create_group from '@assets/images/contact/add_create_group.png'
 import add_join_group from '@assets/images/contact/add_join_group.png'
 import add_search_user from '@assets/images/contact/add_search_user.png'
-import add_scan from '@assets/images/contact/add_scan.png'
 import { GroupType } from '@openim/wasm-client-sdk'
 
 const router = useRouter()
