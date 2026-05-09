@@ -50,6 +50,7 @@ const bootstrapIM = async () => {
 
   const isReady = await ensureIMReady()
   if (!isReady) {
+    await userStore.userLogout(true)
     router.replace('/login')
     return
   }

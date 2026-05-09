@@ -205,7 +205,7 @@ import countryCode from '@/utils/areaCode'
 import { feedbackToast } from '@/utils/common'
 import { ensureIMLogin, resetIMLoginState } from '@/utils/imLogin'
 import { applyLineHost, getAvailableHosts, getCurrentLineHost, testHostLatency } from '@/utils/lineSwitch'
-import { setIMProfile } from '@/utils/storage'
+import { clearIMProfile, setIMProfile } from '@/utils/storage'
 
 type LoginMode = 'phone' | 'account'
 
@@ -403,6 +403,7 @@ const onSubmit = async () => {
     })
 
     persistRememberedPassword()
+    clearIMProfile()
     setIMProfile({ chatToken, imToken, userID })
     resetIMLoginState()
     const isLogged = await ensureIMLogin()

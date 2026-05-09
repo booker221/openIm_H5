@@ -28,6 +28,10 @@ export const clearIMProfile = () => {
   localStorage.removeItem('IM_TOKEN')
   localStorage.removeItem('IM_CHAT_TOKEN')
   localStorage.removeItem('IM_USERID')
+  localStorage.removeItem('wsUrl')
+  localStorage.removeItem('apiUrl')
+  localStorage.removeItem('chatUrl')
+  localStorage.removeItem('selectedHost')
 }
 
 export const getIMToken = () => localStorage.getItem('IM_TOKEN')
