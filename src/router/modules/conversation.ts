@@ -39,6 +39,11 @@ const conversationRouters: Array<RouteRecordRaw> = [
     name: 'GlobalSearch',
     component: () => import('@pages/conversation/globalSearch/index.vue'),
   },
+  {
+    path: '/groupQrCode',
+    name: 'GroupQrCode',
+    component: () => import('@pages/conversation/groupQrCode/index.vue'),
+  },
 ]
 
 export default conversationRouters

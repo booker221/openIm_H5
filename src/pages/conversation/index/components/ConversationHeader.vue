@@ -183,6 +183,8 @@ import add_search_user from '@assets/images/contact/add_search_user.png'
 import add_join_group from '@assets/images/contact/add_join_group.png'
 import add_create_group from '@assets/images/contact/add_create_group.png'
 import mass_msg from '@assets/images/contact/mass_msg.png'
+import scan from '@assets/images/conversation/scan.png'
+import qr_code from '@assets/images/profile/qr_code.png'
 import { PopoverAction, showToast } from 'vant'
 import useUserStore from '@/store/modules/user'
 import { IMSDK } from '@/utils/imCommon'
@@ -195,6 +197,8 @@ enum ActionEnum {
   AddFriend,
   AddGroup,
   CreateGroup,
+  ScanQrCode,
+  MyQrCode,
   BroadcastMessage,
   MessageToSelf,
 }
@@ -260,6 +264,16 @@ const conversationTopMoreActions = computed<ConversationPopoverAction[]>(() => {
   }
 
   actions.push(
+    {
+      text: t('scanQrCode'),
+      icon: scan,
+      actionType: ActionEnum.ScanQrCode,
+    },
+    {
+      text: t('qrCode'),
+      icon: qr_code,
+      actionType: ActionEnum.MyQrCode,
+    },
     {
       text: t('broadcastMessage'),
       icon: mass_msg,
@@ -366,6 +380,12 @@ const selectMenu = async (action: ConversationPopoverAction) => {
           groupType: GroupType.WorkingGroup,
         },
       })
+      break
+    case ActionEnum.ScanQrCode:
+      router.push('/scanQrCode')
+      break
+    case ActionEnum.MyQrCode:
+      router.push('/myQrCode')
       break
     case ActionEnum.BroadcastMessage:
       router.push('/broadcastMessage')

@@ -164,6 +164,8 @@ export const lang = {
   scanGuide: 'Place an OpenIM friend or group QR code in the frame to scan automatically',
   scanFromAlbum: 'Scan from Album',
   enterQrCodeContent: 'Enter QR Code Content',
+  qrCodeHint: 'Scan the QR code below to add me as a friend',
+  groupQrCodeHint: 'Scan the QR code below to join the group',
   photograph: 'Photograph',
   recording: 'Recording',
   search: 'Search',

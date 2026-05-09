@@ -58,6 +58,11 @@
           :title="$t('groupManage')"
           @click="toGroupManage"
         />
+        <SettingRowItem
+          v-if="isOwner || isAdmin"
+          :title="$t('groupQrCode')"
+          @click="toGroupQrCode"
+        />
       </div>
 
       <div class="m-[10px] overflow-hidden rounded-md bg-white">
@@ -162,6 +167,10 @@ const toChangeName = (isGroup?: boolean) => {
 
 const toGroupManage = () => {
   router.push('/groupManage')
+}
+
+const toGroupQrCode = () => {
+  router.push('/groupQrCode')
 }
 
 const dismissOrQuit = () => {

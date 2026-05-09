@@ -86,6 +86,7 @@ import useConversationToggle from '@/hooks/useConversationToggle'
 import { getDefaultAvatar } from '@/utils/avatar'
 
 const router = useRouter()
+const route = useRoute()
 const contactStore = useContactStore()
 const conversationStore = useConversationStore()
 const { toSpecifiedConversation } = useConversationToggle()
@@ -112,6 +113,7 @@ const comptMemberRow = computed(() => {
     faceURL: getDefaultAvatar(`ic_avatar_0${idx === 6 ? 1 : idx + 1}`),
   }))
 })
+const isScanEntry = computed(() => route.query.isScan === 'true')
 
 const toConversationOrApply = () => {
   const sessionType = SessionType.Group
@@ -126,7 +128,7 @@ const toConversationOrApply = () => {
       query: {
         isGroup: 'true',
         sourceID: conversationStore.storeCurrentGroupInfo.groupID,
-        isScan: 'false',
+        isScan: String(isScanEntry.value),
         notNeedVerification: 'false',
         sessionType,
       },

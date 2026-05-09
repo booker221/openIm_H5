@@ -164,6 +164,8 @@ export const lang = {
   scanGuide: '将 OpenIM 好友码或群二维码放入框内即可自动识别',
   scanFromAlbum: '从相册识别',
   enterQrCodeContent: '输入二维码内容',
+  qrCodeHint: '扫一扫下面的二维码，添加我为好友',
+  groupQrCodeHint: '扫一扫下面的二维码，立即加入群聊',
   photograph: '拍照',
   recording: '录制',
   search: '搜索',

@@ -16,6 +16,7 @@ declare module '@vue/runtime-core' {
     DetailInfoItem: typeof import('./src/components/DetailInfoItem/index.vue')['default']
     GenericListItem: typeof import('./src/components/GenericListItem/index.vue')['default']
     NavBar: typeof import('./src/components/NavBar/index.vue')['default']
+    OpenIMQrCodeCard: typeof import('./src/components/OpenIMQrCodeCard/index.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SettingRowItem: typeof import('./src/components/SettingRowItem/index.vue')['default']
