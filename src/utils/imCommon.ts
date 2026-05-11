@@ -2,6 +2,7 @@ import { CustomMessageType, GroupSystemMessageTypes } from '@/constants/enum'
 import dayjs from 'dayjs'
 
 import { sec2Time, secondsToTime } from './common'
+import { parseCallCustomMessage } from './customMessage'
 import { isThisYear } from 'date-fns'
 
 import useContactStore from '@store/modules/contact'
@@ -392,6 +393,8 @@ export const formatMessageByType = (message: MessageItem): string => {
       return t('messageDescription.locationMessage', {
         location: locationInfo.name,
       })
+    case MessageType.CustomMessage:
+      return parseCallCustomMessage(message)?.content ?? '[消息]'
     case MessageType.CardMessage:
       return t('messageDescription.cardMessage')
     case MessageType.MergeMessage:

@@ -20,15 +20,20 @@ import type { RtcInvite, WSEvent } from "@openim/wasm-client-sdk/lib/types/entit
 import { AuthData, InviteData } from "../data";
 import { IMSDK } from "@/utils/imCommon";
 import useUserStore from "@/store/modules/user";
-import { CbEvents, MessageType } from "@openim/wasm-client-sdk";
+import useConversationStore from "@/store/modules/conversation";
+import useMessageStore, { ExMessageItem } from "@/store/modules/message";
+import { CbEvents, MessageStatus, MessageType, SessionType } from "@openim/wasm-client-sdk";
 import { CustomType } from "@/constants/enum";
-import { ExMessageItem } from "@/store/modules/message";
 import emitter from "@/utils/events";
 import { RemoteParticipant, Room, RoomEvent } from "livekit-client";
 import Connected from "./Connected.vue";
 import { getRtcConnectData } from "@api/im";
 import { feedbackToast } from "@/utils/common";
 import { getMediaCaptureSupportIssue } from "@/utils/mediaCapture";
+import {
+  buildCallCustomMessageData,
+  CallMessageState,
+} from "@/utils/customMessage";
 
 type IRtcControlEmits = {
   (event: "connectRtc", data?: AuthData): void;
@@ -39,6 +44,7 @@ type IRtcControlProps = {
   isWaiting: boolean;
   isConnected: boolean;
   duration: string;
+  durationSeconds: number;
   invitation: RtcInvite;
   inviteData: InviteData;
   sendCustomSignal: (recvID: string, customType: CustomType) => Promise<void>;
@@ -47,6 +53,8 @@ const emit = defineEmits<IRtcControlEmits>();
 const props = defineProps<IRtcControlProps>();
 
 const userStore = useUserStore();
+const conversationStore = useConversationStore();
+const messageStore = useMessageStore();
 const { t } = useI18n();
 
 const isRecv = computed(
@@ -64,6 +72,7 @@ const showAccept = computed(() => {
 const showConnected = computed(() => props.isConnected || !isRecv.value);
 const remoteDisconnectTimer = ref<number | undefined>();
 const disconnectedParticipantIdentity = ref("");
+const hasInsertedCallMessage = ref(false);
 
 const isTargetParticipant = (identity: string) =>
   identity === props.invitation.inviterUserID ||
@@ -76,13 +85,103 @@ const clearRemoteDisconnectTimer = () => {
   disconnectedParticipantIdentity.value = "";
 };
 
-const closeRtcModal = () => {
+const getCallPartnerUserID = () =>
+  isRecv.value
+    ? props.invitation.inviterUserID
+    : props.invitation.inviteeUserIDList[0];
+
+const patchInsertedCallMessage = (message: ExMessageItem) => {
+  const isSelfMessage = message.sendID === userStore.selfInfo.userID;
+  return {
+    ...message,
+    senderNickname: isSelfMessage
+      ? userStore.selfInfo.nickname
+      : props.inviteData.participant?.userInfo.nickname ?? message.senderNickname,
+    senderFaceUrl: isSelfMessage
+      ? userStore.selfInfo.faceURL
+      : props.inviteData.participant?.userInfo.faceURL ?? message.senderFaceUrl,
+  } as ExMessageItem;
+};
+
+const appendCallMessageToCurrentConversation = (message: ExMessageItem) => {
+  const isSingleConversation =
+    conversationStore.storeCurrentConversation.conversationType ===
+      SessionType.Single &&
+    conversationStore.storeCurrentConversation.userID === getCallPartnerUserID();
+  const isGroupConversation =
+    !!props.invitation.groupID &&
+    conversationStore.storeCurrentConversation.groupID === props.invitation.groupID;
+
+  if (!isSingleConversation && !isGroupConversation) {
+    return;
+  }
+
+  messageStore.pushNewMessage(message);
+  emitter.emit("CHAT_MAIN_SCROLL_TO_BOTTOM", false);
+};
+
+const insertCallMessage = async (state: CallMessageState) => {
+  if (hasInsertedCallMessage.value) {
+    return;
+  }
+
+  hasInsertedCallMessage.value = true;
+
+  try {
+    const { data: message } = await IMSDK.createCustomMessage({
+      data: buildCallCustomMessageData({
+        duration: props.durationSeconds,
+        state,
+        type: props.invitation.mediaType,
+      }),
+      extension: "",
+      description: "",
+    });
+
+    const localMessage = {
+      ...message,
+      status: MessageStatus.Succeed,
+      isRead: true,
+    };
+
+    const insertedMessage = props.invitation.groupID
+      ? (
+          await IMSDK.insertGroupMessageToLocalStorage({
+            groupID: props.invitation.groupID,
+            sendID: props.invitation.inviterUserID,
+            message: localMessage,
+          })
+        ).data
+      : (
+          await IMSDK.insertSingleMessageToLocalStorage({
+            recvID: props.invitation.inviteeUserIDList[0],
+            sendID: props.invitation.inviterUserID,
+            message: localMessage,
+          })
+        ).data;
+
+    appendCallMessageToCurrentConversation(
+      patchInsertedCallMessage(insertedMessage as ExMessageItem),
+    );
+  } catch (error) {
+    hasInsertedCallMessage.value = false;
+    console.error("insert call message failed", error);
+  }
+};
+
+const closeRtcModal = async (state?: CallMessageState) => {
   clearRemoteDisconnectTimer();
+  if (state) {
+    await insertCallMessage(state);
+  }
   emitter.emit("CLOSE_RTC_MODAL");
 };
 
-const finishCall = () => {
+const finishCall = async (state?: CallMessageState) => {
   clearRemoteDisconnectTimer();
+  if (state) {
+    await insertCallMessage(state);
+  }
   props.room.disconnect();
   emitter.emit("CLOSE_RTC_MODAL");
 };
@@ -119,17 +218,20 @@ const acceptInvitation = async () => {
   }
 };
 
-const disconnect = () => {
+const disconnect = async () => {
   if (props.isWaiting) {
     const customType = isRecv
       ? CustomType.CallingReject
       : CustomType.CallingCancel;
-    props.sendCustomSignal(recvID, customType);
-    closeRtcModal();
+    const callState = isRecv.value ? "reject" : "cancel";
+    await Promise.allSettled([props.sendCustomSignal(recvID, customType)]);
+    await closeRtcModal(callState);
     return;
   }
-  props.sendCustomSignal(recvID, CustomType.CallingHungup);
-  closeRtcModal();
+  await Promise.allSettled([
+    props.sendCustomSignal(recvID, CustomType.CallingHungup),
+  ]);
+  await finishCall("hangup");
 };
 
 const acceptHandler = async ({ roomID }: RtcInvite) => {
@@ -137,20 +239,20 @@ const acceptHandler = async ({ roomID }: RtcInvite) => {
   emit("connectRtc", undefined);
 };
 
-const rejectHandler = ({ roomID }: RtcInvite) => {
+const rejectHandler = async ({ roomID }: RtcInvite) => {
   if (props.invitation.roomID !== roomID) return;
-  closeRtcModal();
+  await closeRtcModal("beRejected");
 };
 
-const hangupHandler = ({ roomID }: RtcInvite) => {
+const hangupHandler = async ({ roomID }: RtcInvite) => {
   if (props.invitation.roomID !== roomID) return;
-  finishCall();
+  await finishCall("beHangup");
 };
 
-const cancelHandler = ({ roomID }: RtcInvite) => {
+const cancelHandler = async ({ roomID }: RtcInvite) => {
   if (props.invitation.roomID !== roomID) return;
   if (!props.isWaiting) return;
-  closeRtcModal();
+  await closeRtcModal("beCanceled");
 };
 
 const participantDisconnectedHandler = (

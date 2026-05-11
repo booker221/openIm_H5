@@ -1,5 +1,6 @@
 import { MessageType } from '@openim/wasm-client-sdk'
 import type { MessageItem } from '@openim/wasm-client-sdk/lib/types/entity'
+import { parseCallCustomMessage } from '@/utils/customMessage'
 
 export const getMessagePreviewText = (message: Partial<MessageItem>) => {
   switch (message.contentType) {
@@ -17,6 +18,8 @@ export const getMessagePreviewText = (message: Partial<MessageItem>) => {
       return '[文件]'
     case MessageType.LocationMessage:
       return '[位置]'
+    case MessageType.CustomMessage:
+      return parseCallCustomMessage(message)?.content ?? '[消息]'
     case MessageType.CardMessage:
       return '[名片]'
     case MessageType.QuoteMessage:

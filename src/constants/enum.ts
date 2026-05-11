@@ -1,7 +1,7 @@
 import { MessageType, SessionType } from '@openim/wasm-client-sdk'
 
 export const CustomMessageType = {
-  Call: 100,
+  Call: 901,
   MassMsg: 903,
   MeetingInvitation: 905,
 }

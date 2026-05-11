@@ -30,6 +30,7 @@
           :invitation="inviteData.invitation!"
           :inviteData="inviteData"
           :duration="duration"
+          :durationSeconds="durationSeconds"
           @connectRtc="connectRtc"
           :room="room"
           :sendCustomSignal="sendCustomSignal"
@@ -90,6 +91,7 @@ const counterRef = ref()
 const el = ref<HTMLElement | null>(null)
 
 const duration = computed(() => counterRef.value?.getTime() ?? '')
+const durationSeconds = computed(() => counterRef.value?.getSeconds() ?? 0)
 const isWaiting = computed(() => !(props.connect && props.isConnected))
 const initialValueX = computed(
   () =>

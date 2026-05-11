@@ -36,6 +36,7 @@ const secondsToMS = (duration: number) => {
 }
 
 const getTime = () => secondsToMS(count.value)
+const getSeconds = () => count.value
 
 onUnmounted(() => {
   if (timer.value) {
@@ -45,5 +46,6 @@ onUnmounted(() => {
 
 defineExpose({
   getTime,
+  getSeconds,
 })
 </script>

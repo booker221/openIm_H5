@@ -50,6 +50,7 @@ import CatchMsgRenderer from './CatchMsgRenderer.vue'
 import QuoteMessageRenderer from './QuoteMessageRenderer.vue'
 import FileMessageRenderer from './FileMessageRenderer.vue'
 import CardMessageRenderer from './CardMessageRenderer.vue'
+import CustomMessageRenderer from './CustomMessageRenderer.vue'
 import { MessageType, SessionType } from '@openim/wasm-client-sdk'
 import useUserStore from '@/store/modules/user'
 import { ExedMessageItem } from './data'
@@ -91,6 +92,8 @@ const getRenderComp = computed(() => {
       return MediaMessageRenderer
     case MessageType.FileMessage:
       return FileMessageRenderer
+    case MessageType.CustomMessage:
+      return CustomMessageRenderer
     case MessageType.CardMessage:
       return CardMessageRenderer
     case MessageType.QuoteMessage:
