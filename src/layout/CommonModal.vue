@@ -10,11 +10,7 @@ import rtcModal from "@/pages/rtc/index.vue";
 import emitter from "@/utils/events";
 import { IMSDK } from "@/utils/imCommon";
 import { CbEvents, MessageType } from "@openim/wasm-client-sdk";
-import type {
-  MessageItem,
-  RtcInvite,
-  WSEvent,
-} from "@openim/wasm-client-sdk/lib/types/entity";
+import type { MessageItem, RtcInvite, WSEvent } from "@openim/wasm-client-sdk/lib/types/entity";
 
 const showRtcModal = ref(false);
 const inviteData = reactive<InviteData>({});
@@ -31,17 +27,30 @@ const closeRtcModalHandler = () => {
   showRtcModal.value = false;
 };
 
-const newMessageHandler = ({ data }: WSEvent<MessageItem[]>) => {
-  if (showRtcModal.value) return;
-  let rtcInvite = undefined as undefined | RtcInvite;
-  data.map((message) => {
-    if (message.contentType === MessageType.CustomMessage) {
-      const customData = JSON.parse(message.customElem!.data);
-      if (customData.customType === CustomType.CallingInvite) {
-        rtcInvite = customData.data;
-      }
+const getRtcInviteFromMessage = (message: MessageItem) => {
+  if (message.contentType !== MessageType.CustomMessage || !message.customElem?.data) {
+    return undefined;
+  }
+
+  try {
+    const customData = JSON.parse(message.customElem.data);
+    if (customData.customType === CustomType.CallingInvite) {
+      return customData.data as RtcInvite;
     }
-  });
+  } catch (error) {
+    console.warn("[RTC] parse invite signal failed", error);
+  }
+
+  return undefined;
+};
+
+const newMessageHandler = ({ data }: WSEvent<MessageItem | MessageItem[]>) => {
+  if (showRtcModal.value) return;
+  const messages = Array.isArray(data) ? data : [data];
+  const rtcInvite = messages
+    .map((message) => getRtcInviteFromMessage(message))
+    .find(Boolean);
+
   if (rtcInvite) {
     getBusinessInfo(rtcInvite.inviterUserID).then(({ data: { users } }) => {
       if (users.length === 0) return;
@@ -60,12 +69,14 @@ const newMessageHandler = ({ data }: WSEvent<MessageItem[]>) => {
 };
 
 onMounted(() => {
+  IMSDK.on(CbEvents.OnRecvNewMessage, newMessageHandler);
   IMSDK.on(CbEvents.OnRecvNewMessages, newMessageHandler);
   emitter.on("OPEN_RTC_MODAL", openRtcModalHandler);
   emitter.on("CLOSE_RTC_MODAL", closeRtcModalHandler);
 });
 
 onUnmounted(() => {
+  IMSDK.off(CbEvents.OnRecvNewMessage, newMessageHandler);
   IMSDK.off(CbEvents.OnRecvNewMessages, newMessageHandler);
   emitter.off("OPEN_RTC_MODAL", openRtcModalHandler);
   emitter.off("CLOSE_RTC_MODAL", closeRtcModalHandler);

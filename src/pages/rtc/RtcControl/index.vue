@@ -73,6 +73,8 @@ const showConnected = computed(() => props.isConnected || !isRecv.value);
 const remoteDisconnectTimer = ref<number | undefined>();
 const disconnectedParticipantIdentity = ref("");
 const hasInsertedCallMessage = ref(false);
+const isSettling = ref(false);
+const hasEverConnected = ref(props.isConnected);
 
 const isTargetParticipant = (identity: string) =>
   identity === props.invitation.inviterUserID ||
@@ -169,23 +171,42 @@ const insertCallMessage = async (state: CallMessageState) => {
   }
 };
 
-const closeRtcModal = async (state?: CallMessageState) => {
+const settleRtc = async ({
+  state,
+  shouldDisconnectRoom = true,
+}: {
+  state?: CallMessageState;
+  shouldDisconnectRoom?: boolean;
+}) => {
+  if (isSettling.value) {
+    return;
+  }
+
+  isSettling.value = true;
   clearRemoteDisconnectTimer();
+
   if (state) {
     await insertCallMessage(state);
   }
-  emitter.emit("CLOSE_RTC_MODAL");
-};
 
-const finishCall = async (state?: CallMessageState) => {
-  clearRemoteDisconnectTimer();
-  if (state) {
-    await insertCallMessage(state);
+  if (shouldDisconnectRoom) {
+    props.room.disconnect();
   }
-  props.room.disconnect();
+
   emitter.emit("CLOSE_RTC_MODAL");
 };
 
+const closeRtcModal = async (state?: CallMessageState) =>
+  settleRtc({
+    state,
+    shouldDisconnectRoom: false,
+  });
+
+const finishCall = async (state?: CallMessageState) =>
+  settleRtc({
+    state,
+    shouldDisconnectRoom: true,
+  });
 
 const acceptInvitation = async () => {
   try {
@@ -220,7 +241,7 @@ const acceptInvitation = async () => {
 
 const disconnect = async () => {
   if (props.isWaiting) {
-    const customType = isRecv
+    const customType = isRecv.value
       ? CustomType.CallingReject
       : CustomType.CallingCancel;
     const callState = isRecv.value ? "reject" : "cancel";
@@ -278,45 +299,93 @@ const participantConnectedHandler = (remoteParticipant: RemoteParticipant) => {
   clearRemoteDisconnectTimer();
 };
 
-const newMessageHandler = ({ data }: WSEvent<ExMessageItem[]>) => {
-  data.map((message) => {
-    if (message.contentType === MessageType.CustomMessage) {
-      const customData = JSON.parse(message.customElem!.data) as {
-        data: RtcInvite;
-        customType: CustomType;
-      };
-      if (customData.customType === CustomType.CallingAccept) {
-        acceptHandler(customData.data);
-      }
-      if (customData.customType === CustomType.CallingReject) {
-        rejectHandler(customData.data);
-      }
-      if (customData.customType === CustomType.CallingCancel) {
-        cancelHandler(customData.data);
-      }
-      if (customData.customType === CustomType.CallingHungup) {
-        hangupHandler(customData.data);
-      }
+const parseRtcSignal = (message: ExMessageItem) => {
+  if (message.contentType !== MessageType.CustomMessage || !message.customElem?.data) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(message.customElem.data) as {
+      data: RtcInvite;
+      customType: CustomType;
+    };
+  } catch (error) {
+    console.warn("[RTC] parse signal failed", error);
+    return undefined;
+  }
+};
+
+const newMessageHandler = ({ data }: WSEvent<ExMessageItem | ExMessageItem[]>) => {
+  const messages = Array.isArray(data) ? data : [data];
+
+  messages.forEach((message) => {
+    const customData = parseRtcSignal(message);
+    if (!customData) {
+      return;
+    }
+
+    if (customData.customType === CustomType.CallingAccept) {
+      acceptHandler(customData.data);
+    }
+    if (customData.customType === CustomType.CallingReject) {
+      rejectHandler(customData.data);
+    }
+    if (customData.customType === CustomType.CallingCancel) {
+      cancelHandler(customData.data);
+    }
+    if (customData.customType === CustomType.CallingHungup) {
+      hangupHandler(customData.data);
     }
   });
 };
 
+const timeoutHandler = async ({ roomID }: { roomID: string }) => {
+  if (props.invitation.roomID !== roomID) {
+    return;
+  }
+
+  await closeRtcModal("timeout");
+};
+
+watch(
+  () => props.isConnected,
+  (connected, previousConnected) => {
+    if (connected) {
+      hasEverConnected.value = true;
+      return;
+    }
+
+    if (previousConnected && !isSettling.value) {
+      const fallbackState =
+        hasEverConnected.value && props.durationSeconds > 0 ? "networkError" : undefined;
+      settleRtc({
+        state: fallbackState,
+        shouldDisconnectRoom: false,
+      });
+    }
+  },
+);
+
 onMounted(() => {
+  IMSDK.on(CbEvents.OnRecvNewMessage, newMessageHandler);
   IMSDK.on(CbEvents.OnRecvNewMessages, newMessageHandler);
   props.room.on(
     RoomEvent.ParticipantDisconnected,
     participantDisconnectedHandler
   );
   props.room.on(RoomEvent.ParticipantConnected, participantConnectedHandler);
+  emitter.on("RTC_TIMEOUT", timeoutHandler);
 });
 
 onUnmounted(() => {
   clearRemoteDisconnectTimer();
+  IMSDK.off(CbEvents.OnRecvNewMessage, newMessageHandler);
   IMSDK.off(CbEvents.OnRecvNewMessages, newMessageHandler);
   props.room.off(
     RoomEvent.ParticipantDisconnected,
     participantDisconnectedHandler
   );
   props.room.off(RoomEvent.ParticipantConnected, participantConnectedHandler);
+  emitter.off("RTC_TIMEOUT", timeoutHandler);
 });
 </script>

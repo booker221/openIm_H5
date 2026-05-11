@@ -6,6 +6,7 @@ type Events = {
   KEYBOARD_UPDATE: void
   OPEN_RTC_MODAL: InviteData
   CLOSE_RTC_MODAL: void
+  RTC_TIMEOUT: { roomID: string }
 }
 
 const emitter: Emitter<Events> = mitt<Events>()

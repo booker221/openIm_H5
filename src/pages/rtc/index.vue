@@ -114,6 +114,9 @@ const checkTimeout = () => {
       props.inviteData.invitation?.inviteeUserIDList[0],
       CustomType.CallingCancel
     );
+    emitter.emit("RTC_TIMEOUT", {
+      roomID: props.inviteData.invitation.roomID,
+    });
   }, (props.inviteData.invitation?.timeout ?? 30) * 1000);
 };
 
