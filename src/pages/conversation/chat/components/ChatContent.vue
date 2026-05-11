@@ -1,9 +1,9 @@
 <template>
-  <div class="relative flex-1 overflow-hidden">
+  <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
     <virtual-list
       :class="{ '!flex-col': overflow }"
       ref="vsl"
-      class="my_scrollbar h-full overflow-y-auto"
+      class="my_scrollbar min-h-0 flex-1 overflow-y-auto"
       :data-key="'clientMsgID'"
       :data-sources="messageStore.storeHistoryMessageList"
       :topThreshold="120"

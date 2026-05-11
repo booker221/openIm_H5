@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="shrink-0">
     <div v-if="getPlaceholder.length > 0" class="flex h-[54px] items-center justify-center bg-[#F0F2F6]">
       <span class="text-sm text-[#8E9AB0]">{{ getPlaceholder }}</span>
     </div>
