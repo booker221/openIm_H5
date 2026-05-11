@@ -41,9 +41,13 @@
   </van-overlay>
   <div
     v-if="isMini"
-    class="fixed flex h-[110px] w-[86px] flex-col items-center justify-center rounded-md bg-black bg-opacity-80 transition"
+    class="fixed flex h-[110px] w-[86px] select-none flex-col items-center justify-center rounded-md bg-black bg-opacity-80 transition touch-none"
     :style="style"
-    @click="changeMini"
+    @click="handleMiniClick"
+    @pointerdown="handlePointerDown"
+    @pointermove="handlePointerMove"
+    @pointerup="handlePointerUp"
+    @pointercancel="handlePointerCancel"
     ref="el"
   >
     <Avatar
@@ -89,6 +93,12 @@ const isClose = ref(false)
 const isMini = ref(false)
 const counterRef = ref()
 const el = ref<HTMLElement | null>(null)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+const hasDragged = ref(false)
+const suppressMiniClick = ref(false)
+const DRAG_THRESHOLD = 6
+let suppressClickTimer: number | undefined
 
 const duration = computed(() => counterRef.value?.getTime() ?? '')
 const durationSeconds = computed(() => counterRef.value?.getSeconds() ?? 0)
@@ -103,7 +113,7 @@ const initialValueX = computed(
 )
 
 const { isVideo, isGroup, isRecv } = useInviteData(props.inviteData)
-const { style } = useDraggable(el, {
+const { style, isDragging } = useDraggable(el, {
   initialValue: { x: initialValueX.value, y: 100 },
 })
 
@@ -122,6 +132,68 @@ const changeMini = () => {
   show.value = !show.value
   isMini.value = !isMini.value
 }
+
+const resetDragState = () => {
+  hasDragged.value = false
+}
+
+const temporarilySuppressMiniClick = () => {
+  suppressMiniClick.value = true
+  if (suppressClickTimer) {
+    window.clearTimeout(suppressClickTimer)
+  }
+  suppressClickTimer = window.setTimeout(() => {
+    suppressMiniClick.value = false
+  }, 180)
+}
+
+const handlePointerDown = (event: PointerEvent) => {
+  dragStartX.value = event.clientX
+  dragStartY.value = event.clientY
+  suppressMiniClick.value = false
+  hasDragged.value = false
+}
+
+const handlePointerMove = (event: PointerEvent) => {
+  if (hasDragged.value) {
+    return
+  }
+
+  const offsetX = Math.abs(event.clientX - dragStartX.value)
+  const offsetY = Math.abs(event.clientY - dragStartY.value)
+
+  if (offsetX > DRAG_THRESHOLD || offsetY > DRAG_THRESHOLD) {
+    hasDragged.value = true
+  }
+}
+
+const handlePointerUp = () => {
+  if (hasDragged.value || isDragging.value) {
+    temporarilySuppressMiniClick()
+  }
+  window.setTimeout(resetDragState, 0)
+}
+
+const handlePointerCancel = () => {
+  if (hasDragged.value || isDragging.value) {
+    temporarilySuppressMiniClick()
+  }
+  resetDragState()
+}
+
+const handleMiniClick = () => {
+  if (suppressMiniClick.value || hasDragged.value || isDragging.value) {
+    return
+  }
+
+  changeMini()
+}
+
+onBeforeUnmount(() => {
+  if (suppressClickTimer) {
+    window.clearTimeout(suppressClickTimer)
+  }
+})
 </script>
 
 <style lang="scss" scoped>
