@@ -56,6 +56,16 @@ const conversationRouters: Array<RouteRecordRaw> = [
     name: 'GroupQrCode',
     component: () => import('@pages/conversation/groupQrCode/index.vue'),
   },
+  {
+    path: '/groupAnnouncement',
+    name: 'GroupAnnouncement',
+    component: () => import('@pages/conversation/groupAnnouncement/index.vue'),
+  },
+  {
+    path: '/groupChatHistory',
+    name: 'GroupChatHistory',
+    component: () => import('@pages/conversation/groupChatHistory/index.vue'),
+  },
 ]
 
 export default conversationRouters

@@ -65,6 +65,40 @@
         />
       </div>
 
+      <div
+        class="mx-[10px] mt-[10px] overflow-hidden rounded-md bg-white"
+        @click="toGroupAnnouncement"
+      >
+        <div class="flex items-center justify-between px-4 py-3">
+          <div class="flex items-center gap-2">
+            <span>{{ $t('popover.groupAnnouncement') }}</span>
+            <span
+              v-if="announcementPinned"
+              class="rounded-full bg-[#EAF4FF] px-2 py-[2px] text-xs text-primary"
+            >
+              {{ $t('checks.pin') }}
+            </span>
+          </div>
+          <img class="h-[24px] w-[24px]" :src="back" alt="" />
+        </div>
+        <div class="mx-4 h-px bg-[rgba(153,153,153,0.3)]"></div>
+        <div class="px-4 py-4 text-sm leading-6 text-[#0C1C33]">
+          <div v-if="groupAnnouncement" class="line-clamp-5 break-all">
+            {{ groupAnnouncement }}
+          </div>
+          <div v-else class="text-sub-text">
+            {{ $t('emptyGroupAnnouncement') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="mx-[10px] mt-[10px] overflow-hidden rounded-md bg-white">
+        <SettingRowItem
+          :title="$t('popover.chatRecord')"
+          @click-item="toGroupChatHistory"
+        />
+      </div>
+
       <div class="m-[10px] overflow-hidden rounded-md bg-white">
         <SettingRowItem
           v-if="inSameGroup"
@@ -90,6 +124,7 @@
 <script name="groupSetting" setup lang="ts">
 import edit from '@/assets/images/setting/edit.png'
 import edit_icon from '@/assets/images/setting/edit_icon.png'
+import back from '@assets/images/profile/back.png'
 import NavBar from '@/components/NavBar/index.vue'
 import Avatar from '@/components/Avatar/index.vue'
 import {
@@ -103,6 +138,7 @@ import GroupMemberRow from './components/GroupMemberRow.vue'
 import useConversationSettings from '@/hooks/useConversationSettings'
 import useCurrentMemberRole from '@/hooks/useCurrentMemberRole'
 import { IMSDK } from '@/utils/imCommon'
+import { isGroupAnnouncementPinned } from '@/utils/groupExtra'
 import { v4 as uuidV4 } from 'uuid'
 import { feedbackToast, getFileType, useCopy } from '@/utils/common'
 
@@ -114,6 +150,12 @@ const { t } = useI18n()
 const { copy } = useCopy()
 
 const uploaderRef = ref<UploaderInstance>()
+const groupAnnouncement = computed(
+  () => conversationStore.storeCurrentGroupInfo.notification?.trim() ?? '',
+)
+const announcementPinned = computed(() =>
+  isGroupAnnouncementPinned(conversationStore.storeCurrentGroupInfo),
+)
 
 const afterReadFile = (data: UploaderFileListItem | UploaderFileListItem[]) => {
   const fileData = Array.isArray(data) ? data[0] : data
@@ -173,6 +215,14 @@ const toGroupQrCode = () => {
   router.push('/groupQrCode')
 }
 
+const toGroupAnnouncement = () => {
+  router.push('/groupAnnouncement')
+}
+
+const toGroupChatHistory = () => {
+  router.push('/groupChatHistory')
+}
+
 const dismissOrQuit = () => {
   const funName = isOwner.value ? 'dismissGroup' : 'quitGroup'
   const message = isOwner.value
@@ -199,6 +249,24 @@ const dismissOrQuit = () => {
 const copyGroupID = () => {
   copy(conversationStore.storeCurrentGroupInfo.groupID)
 }
+
+onMounted(async () => {
+  if (!conversationStore.storeCurrentConversation.conversationID) {
+    const restored = await conversationStore.restoreCurrentConversation()
+    if (!restored) {
+      router.replace('/conversation')
+      return
+    }
+  }
+
+  if (!conversationStore.storeCurrentConversation.groupID) {
+    router.replace('/conversation')
+    return
+  }
+
+  conversationStore.getCurrentGroupInfoFromReq()
+  conversationStore.getCurrentMemberInGroupFromReq()
+})
 </script>
 
 <style lang="scss" scoped></style>

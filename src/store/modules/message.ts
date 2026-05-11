@@ -13,6 +13,7 @@ interface StateType {
   isMultiSelectMode: boolean
   selectedMessageKeys: string[]
   forwardMessageList: ExMessageItem[]
+  pendingScrollMessageID: string
 }
 
 type ExType = {
@@ -64,6 +65,7 @@ const useStore = defineStore('message', {
     isMultiSelectMode: false,
     selectedMessageKeys: [],
     forwardMessageList: [],
+    pendingScrollMessageID: '',
   }),
   getters: {
     storeHistoryMessageList: (state) => state.historyMessageList,
@@ -76,6 +78,7 @@ const useStore = defineStore('message', {
         state.selectedMessageKeys.includes(getMessageUniqueKey(message)),
       ),
     storeForwardMessageList: (state) => state.forwardMessageList,
+    storePendingScrollMessageID: (state) => state.pendingScrollMessageID,
   },
   actions: {
     async getHistoryMessageListFromReq(
@@ -204,6 +207,17 @@ const useStore = defineStore('message', {
       this.isMultiSelectMode = false
       this.selectedMessageKeys = []
       this.forwardMessageList = []
+      this.pendingScrollMessageID = ''
+    },
+    replaceHistoryMessageList(messageList: ExMessageItem[], hasMore = true) {
+      this.historyMessageList = mergeUniqueMessages(messageList)
+      this.hasMore = hasMore
+      this.quoteMessage = undefined
+      this.isMultiSelectMode = false
+      this.selectedMessageKeys = []
+    },
+    setPendingScrollMessageID(clientMsgID = '') {
+      this.pendingScrollMessageID = clientMsgID
     },
     updateMessageNicknameAndFaceUrl({
       sendID,

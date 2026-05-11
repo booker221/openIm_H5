@@ -108,6 +108,16 @@ export default function useHistoryMessageList() {
     }
   }
 
+  const scrollToClientMsgID = (clientMsgID: string) => {
+    const idx = messageStore.storeHistoryMessageList.findIndex(
+      (message) => message.clientMsgID === clientMsgID,
+    )
+
+    if (idx > -1) {
+      setVirtualListToIndex(idx)
+    }
+  }
+
   const scrollToUnread = () => {
     const idx = messageStore.storeHistoryMessageList.findIndex(
       (message) => message.isAppend === true && !message.isRead,
@@ -117,6 +127,20 @@ export default function useHistoryMessageList() {
     if (idx > -1) {
       setVirtualListToIndex(idx)
     }
+  }
+
+  const consumePendingScrollMessage = () => {
+    const clientMsgID = messageStore.storePendingScrollMessageID
+    if (!clientMsgID) {
+      return
+    }
+
+    nextTick(() => {
+      window.setTimeout(() => {
+        scrollToClientMsgID(clientMsgID)
+        messageStore.setPendingScrollMessageID()
+      }, 16)
+    })
   }
 
   // events
@@ -143,6 +167,7 @@ export default function useHistoryMessageList() {
   onActivated(() => {
     setEventListener()
     IMSDK.on(CbEvents.OnSyncServerFinish, resetMessageList)
+    consumePendingScrollMessage()
   })
 
   onDeactivated(() => {

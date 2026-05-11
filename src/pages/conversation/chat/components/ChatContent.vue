@@ -27,6 +27,18 @@
       @scroll="onScoll"
     >
       <template #header>
+        <div
+          v-if="showAnnouncementBar"
+          class="group_announcement_tab"
+          @click="openGroupAnnouncement"
+        >
+          <div class="text-xs font-medium text-primary">
+            {{ $t('popover.groupAnnouncement') }}
+          </div>
+          <div class="mt-1 line-clamp-2 break-all text-sm text-[#0C1C33]">
+            {{ pinnedAnnouncement }}
+          </div>
+        </div>
         <div v-if="overflow && !initLoading" class="pt-2">
           <div class="spinner" v-show="loadState.loading"></div>
           <div class="finished" v-show="!messageStore.storeHistoryMessageHasMore">
@@ -53,20 +65,24 @@
 
 <script setup lang="ts">
 import useMessageStore from '@/store/modules/message'
+import useConversationStore from '@/store/modules/conversation'
 import VirtualList from '@components/VirtualList'
 import useHistoryMessageList from '../useHistoryMessageList'
 import MessageItemVue from './MessageItem/MessageItem.vue'
 import SystemNotificationItem from './SystemNotificationItem.vue'
-import { MessageItem, MessageType } from '@openim/wasm-client-sdk'
+import { MessageItem, MessageType, SessionType } from '@openim/wasm-client-sdk'
 import { TipTypes } from '@/constants/enum'
 import ChatMessageMenu from './ChatMessageMenu.vue'
 import useChatMessageActions from '../useChatMessageActions'
 import { ExMessageItem, getMessageUniqueKey } from '@/store/modules/message'
+import { isGroupAnnouncementPinned } from '@/utils/groupExtra'
 
 const emit = defineEmits([])
 const { t } = useI18n()
+const router = useRouter()
 
 const messageStore = useMessageStore()
+const conversationStore = useConversationStore()
 const {
   canDeleteMessage,
   canRecallMessage,
@@ -89,9 +105,23 @@ const initLoading = toRef(historyMessageState, 'initLoading')
 const showMessageMenu = ref(false)
 const messageMenuTop = ref(0)
 const activeMessage = ref<ExMessageItem>()
+const pinnedAnnouncement = computed(
+  () => conversationStore.storeCurrentGroupInfo.notification?.trim() ?? '',
+)
+const showAnnouncementBar = computed(
+  () =>
+    conversationStore.storeCurrentConversation.conversationType ===
+      SessionType.Group &&
+    !!pinnedAnnouncement.value &&
+    isGroupAnnouncementPinned(conversationStore.storeCurrentGroupInfo),
+)
 const activeMessageKey = computed(() =>
   activeMessage.value ? getMessageUniqueKey(activeMessage.value) : '',
 )
+
+const openGroupAnnouncement = () => {
+  router.push('/groupAnnouncement')
+}
 
 const closeMessageMenu = () => {
   showMessageMenu.value = false
@@ -302,16 +332,12 @@ watch(
 
 .group_announcement_tab {
   display: flex;
-  position: absolute;
-  top: 6px;
-  z-index: 10;
   flex-direction: column;
   align-items: flex-start;
-  width: 90%;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 8px 16px 4px;
   background-color: #f2f8ff;
   padding: 8px 12px;
   border-radius: 6px;
+  cursor: pointer;
 }
 </style>
