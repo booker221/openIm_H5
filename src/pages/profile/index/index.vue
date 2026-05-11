@@ -23,14 +23,24 @@
         </view>
       </view>
 
-      <view
-        v-if="walletEnabled"
-        class="flex h-[46px] min-w-[92px] flex-col items-end justify-between"
-        @click="menuClick('/myWallet')"
+      <div
+        class="ml-3 flex cursor-pointer flex-col items-center"
+        @click="menuClick('/myQrCode')"
       >
-        <text class="text-xs text-sub-text">{{ $t('profileMenu.balance') }}</text>
-        <text class="text-[18px] font-medium text-[#0C1C33]">¥{{ walletAmount }}</text>
-      </view>
+        <div
+          class="rounded-[12px] border border-[#DDEAFB] bg-white p-1 shadow-[0_4px_12px_rgba(12,28,51,0.08)]"
+        >
+          <canvas
+            ref="profileQrCanvasRef"
+            :width="profileQrSize"
+            :height="profileQrSize"
+            :style="{
+              width: `${profileQrSize}px`,
+              height: `${profileQrSize}px`,
+            }"
+          />
+        </div>
+      </div>
     </view>
 
     <div class="mx-auto mt-[10px] w-[90%] rounded-md bg-white">
@@ -57,6 +67,7 @@
 </template>
 
 <script name="profile" setup lang="ts">
+import UQRCode from 'uqrcodejs'
 import Avatar from '@/components/Avatar/index.vue'
 import back from '@assets/images/profile/back.png'
 import copy_icon from '@assets/images/profile/copy.png'
@@ -66,7 +77,7 @@ import { showConfirmDialog, showToast } from 'vant'
 import useUserStore from '@/store/modules/user'
 import { useClipboard } from '@vueuse/core'
 import useAppConfigStore from '@/store/modules/appConfig'
-import { getWalletBalance } from '@/api/wallet'
+import { buildFriendQrCodeContent } from '@/constants/qrcode'
 
 const { copy, isSupported } = useClipboard()
 const { t } = useI18n()
@@ -74,9 +85,12 @@ const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 const appConfigStore = useAppConfigStore()
-const walletBalance = ref(0)
 const walletEnabled = computed(() => !!appConfigStore.storeAppConfig?.wallet)
-const walletAmount = computed(() => (walletBalance.value / 100).toFixed(2))
+const profileQrCanvasRef = ref<HTMLCanvasElement>()
+const profileQrSize = 48
+const myQrContent = computed(() =>
+  buildFriendQrCodeContent(userStore.storeSelfInfo.userID),
+)
 
 type ProfileMenu = {
   icon: string
@@ -156,14 +170,22 @@ const copyUserID = () => {
   )
 }
 
-const loadWalletBalance = async () => {
-  if (!walletEnabled.value) return
-  try {
-    const { data } = await getWalletBalance()
-    walletBalance.value = data?.balance ?? 0
-  } catch (error) {
-    walletBalance.value = 0
-  }
+const renderProfileQrCode = async () => {
+  await nextTick()
+
+  const canvas = profileQrCanvasRef.value
+  const ctx = canvas?.getContext('2d')
+
+  if (!canvas || !ctx || !myQrContent.value) return
+
+  ctx.clearRect(0, 0, profileQrSize, profileQrSize)
+
+  const qr = new UQRCode()
+  qr.data = myQrContent.value
+  qr.size = profileQrSize
+  qr.make()
+  qr.canvasContext = ctx
+  qr.drawCanvas()
 }
 
 const tryLogout = () => {
@@ -184,15 +206,7 @@ const tryLogout = () => {
   }).catch(() => {})
 }
 
-watch(
-  walletEnabled,
-  (enabled) => {
-    if (enabled) {
-      loadWalletBalance()
-    }
-  },
-  { immediate: true },
-)
+watch(myQrContent, renderProfileQrCode, { immediate: true })
 
 onMounted(() => {
   if (!appConfigStore.storeLoaded) {

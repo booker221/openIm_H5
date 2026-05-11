@@ -364,6 +364,7 @@ export const lang = {
     receivingAccount: 'Receiving Account',
     realNameAuth: 'Real Name Authentication',
     myFavorites: 'My Favorites',
+    myQrCode: 'My QR Code',
     balance: 'Balance',
     availableBalance: 'Available Balance',
     notSet: 'Not Set',

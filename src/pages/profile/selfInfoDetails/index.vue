@@ -43,6 +43,12 @@
       />
     </div>
 
+    <div class="mx-3 mt-2 overflow-hidden rounded-md">
+      <DetailInfoItem arrow :lable="$t('profileMenu.myQrCode')" @click="goMyQrCode">
+        <img class="h-5 w-5" :src="qrCodeIcon" alt="qr code" />
+      </DetailInfoItem>
+    </div>
+
     <van-uploader
       v-show="false"
       ref="uploaderRef"
@@ -83,6 +89,7 @@
 import DetailInfoItem from '@/components/DetailInfoItem/index.vue'
 import NavBar from '@/components/NavBar/index.vue'
 import Avatar from '@/components/Avatar/index.vue'
+import qrCodeIcon from '@assets/images/profile/qr_code.png'
 import useUserStore from '@/store/modules/user'
 import dayjs from 'dayjs'
 import {
@@ -157,6 +164,10 @@ const editEmail = () => {
       maxLength: '30',
     },
   })
+}
+
+const goMyQrCode = () => {
+  router.push('/myQrCode')
 }
 
 const updateUserInfo = (info: Partial<BusinessUserInfo>) => {

@@ -362,6 +362,7 @@ export const lang = {
     receivingAccount: '收款账户',
     realNameAuth: '实名认证',
     myFavorites: '我的收藏',
+    myQrCode: '我的二维码',
     balance: '余额',
     availableBalance: '可用余额(元)',
     notSet: '未设置',
