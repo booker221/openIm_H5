@@ -1,9 +1,21 @@
 import { RouteRecordRaw } from 'vue-router'
+import useConversationStore from '@/store/modules/conversation'
 
 const conversationRouters: Array<RouteRecordRaw> = [
   {
     path: '/chat',
     name: 'Chat',
+    beforeEnter: async () => {
+      const conversationStore = useConversationStore()
+      const restored = await conversationStore.restoreCurrentConversation()
+      if (restored) {
+        return true
+      }
+
+      return {
+        name: 'Conversation',
+      }
+    },
     component: () => import('@pages/conversation/chat/index.vue'),
   },
   {

@@ -18,6 +18,32 @@ export const setAccessedGroupApplication = (list: string[]) =>
     JSON.stringify(list),
   )
 
+const getCurrentConversationStorageKey = () =>
+  `${getIMUserID() ?? 'guest'}_currentConversation`
+
+export const setCurrentConversation = (conversation: unknown) =>
+  localStorage.setItem(
+    getCurrentConversationStorageKey(),
+    JSON.stringify(conversation),
+  )
+
+export const getCurrentConversation = <T>() => {
+  const value = localStorage.getItem(getCurrentConversationStorageKey())
+  if (!value) {
+    return undefined
+  }
+
+  try {
+    return JSON.parse(value) as T
+  } catch (error) {
+    localStorage.removeItem(getCurrentConversationStorageKey())
+    return undefined
+  }
+}
+
+export const clearCurrentConversation = () =>
+  localStorage.removeItem(getCurrentConversationStorageKey())
+
 export const setIMProfile = ({ chatToken, imToken, userID }: any) => {
   setTMToken(imToken)
   setChatToken(chatToken)
@@ -25,6 +51,7 @@ export const setIMProfile = ({ chatToken, imToken, userID }: any) => {
 }
 
 export const clearIMProfile = () => {
+  clearCurrentConversation()
   localStorage.removeItem('IM_TOKEN')
   localStorage.removeItem('IM_CHAT_TOKEN')
   localStorage.removeItem('IM_USERID')

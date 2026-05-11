@@ -1,4 +1,9 @@
 import { IMSDK } from '@/utils/imCommon'
+import {
+  clearCurrentConversation,
+  getCurrentConversation,
+  setCurrentConversation,
+} from '@/utils/storage'
 import type {
   ConversationItem,
   GroupItem,
@@ -97,13 +102,74 @@ const useStore = defineStore('conversation', {
     },
     updateCurrentConversation(item: ConversationItem) {
       this.currentConversation = { ...item }
+      if (item?.conversationID) {
+        setCurrentConversation(item)
+      }
+    },
+    async restoreCurrentConversation() {
+      if (this.currentConversation.conversationID) {
+        return true
+      }
+
+      const cachedConversation = getCurrentConversation<ConversationItem>()
+      if (!cachedConversation?.conversationID) {
+        return false
+      }
+
+      const existingConversation = this.conversationList.find(
+        (conversation) =>
+          conversation.conversationID === cachedConversation.conversationID,
+      )
+      if (existingConversation) {
+        this.updateCurrentConversation(existingConversation)
+        return true
+      }
+
+      try {
+        const { data } = await IMSDK.getMultipleConversation([
+          cachedConversation.conversationID,
+        ])
+        const restoredConversation = data[0]
+        if (restoredConversation?.conversationID) {
+          this.updateCurrentConversation(restoredConversation)
+          return true
+        }
+      } catch (error) {
+        console.error(error)
+      }
+
+      const sourceID = cachedConversation.groupID || cachedConversation.userID
+      if (!sourceID || !cachedConversation.conversationType) {
+        clearCurrentConversation()
+        return false
+      }
+
+      try {
+        const { data } = await IMSDK.getOneConversation({
+          sourceID,
+          sessionType: cachedConversation.conversationType,
+        })
+        if (data?.conversationID) {
+          this.updateCurrentConversation(data)
+          return true
+        }
+      } catch (error) {
+        console.error(error)
+      }
+
+      clearCurrentConversation()
+      return false
+    },
+    resetCurrentConversation() {
+      this.currentConversation = {} as ConversationItem
     },
     updateConversationList(list: ConversationItem[]) {
       this.conversationList = [...list]
     },
     clearConversationStore() {
       this.conversationList = []
-      this.currentConversation = {} as ConversationItem
+      this.resetCurrentConversation()
+      clearCurrentConversation()
       this.unReadCount = 0
       this.currentGroupInfo = {} as GroupItem
       this.currentMemberInGroup = {} as GroupMemberItem

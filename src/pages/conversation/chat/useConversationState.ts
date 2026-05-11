@@ -58,7 +58,7 @@ export default function useConversationState() {
   onBeforeRouteLeave((to, from, next) => {
     if (to.name === 'Conversation') {
       checkConversationState()
-      conversationStore.updateCurrentConversation({} as ConversationItem)
+      conversationStore.resetCurrentConversation()
     }
     next()
   })
