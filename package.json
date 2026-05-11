@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --force --host",
     "build": "vue-tsc --noEmit && vite build",
+    "deploy:h5": "bash ./scripts/deploy-h5.sh",
     "preview": "vite preview",
     "format": "prettier --write .",
     "postinstall": "patch-package"

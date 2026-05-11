@@ -5,17 +5,8 @@ import { IMSDK } from '@/utils/imCommon'
 import type { MessageItem } from '@openim/wasm-client-sdk/lib/types/entity'
 
 export default function useCreateFileMessage() {
-  const { t } = useI18n()
-
-  const getFileData = (data: Blob): Promise<ArrayBuffer> => {
-    return new Promise((resolve, reject) => {
-      let reader = new FileReader()
-      reader.onload = function () {
-        resolve(reader.result as ArrayBuffer)
-      }
-      reader.readAsArrayBuffer(data)
-    })
-  }
+  const sanitizeFileName = (name: string) =>
+    name.replace(/[<>:"/\\|?*]/g, '_').trim() || `file-${Date.now()}`
 
   const getImageMessage = async (file: File): Promise<MessageItem> => {
     const { width, height } = await getPicInfo(file)
@@ -37,12 +28,31 @@ export default function useCreateFileMessage() {
     return (await IMSDK.createImageMessageByFile(options)).data
   }
 
+  const getFileMessage = async (file: File): Promise<MessageItem> => {
+    const fileName = sanitizeFileName(file.name)
+    const localUrl = URL.createObjectURL(file)
+    return (
+      await IMSDK.createFileMessageByFile({
+        filePath: localUrl,
+        fileName,
+        uuid: uuidV4(),
+        sourceUrl: localUrl,
+        fileSize: file.size,
+        fileType: file.type || undefined,
+        file,
+      })
+    ).data
+  }
+
   const createFileMessage = async (file: File, messageType: MessageType) => {
     switch (messageType) {
       case MessageType.PictureMessage:
         return {
           message: await getImageMessage(file),
-          buffer: await getFileData(file),
+        }
+      case MessageType.FileMessage:
+        return {
+          message: await getFileMessage(file),
         }
       default:
         return {

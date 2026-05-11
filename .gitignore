@@ -7,7 +7,7 @@ yarn-error.log*
 dist/
 build/
 !build/icons
-
+dist.zip
 # Editor directories and files
 .idea
 .vscode

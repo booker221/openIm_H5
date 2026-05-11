@@ -33,13 +33,14 @@
 <script setup lang="ts">
 import image from '@/assets/images/chatFooter/image.png'
 import call from '@/assets/images/chatFooter/call.png'
+import file from '@/assets/images/chatFooter/file.png'
 
 import { onClickOutside } from '@vueuse/core'
 import { ActionSheetAction, UploaderFileListItem, UploaderInstance } from 'vant'
 import useConversationStore from '@/store/modules/conversation'
 import { ChatFooterActionType } from '@/constants/action'
 import { useInviteRtc } from '@/hooks/useInviteRtc'
-import { SessionType } from '@openim/wasm-client-sdk'
+import { MessageType, SessionType } from '@openim/wasm-client-sdk'
 
 const { t } = useI18n()
 const { inviteRtc } = useInviteRtc()
@@ -51,7 +52,7 @@ const isSingle = computed(
 
 type ChatFooterActionEmits = {
   (event: 'closeActionBar'): void
-  (event: 'getFile', uploadData: UploaderFileListItem): void
+  (event: 'getFile', uploadData: UploaderFileListItem, messageType: MessageType): void
 }
 
 type ChatFooterActionItem = {
@@ -68,6 +69,11 @@ const actionList = computed(() => {
         icon: image,
         type: ChatFooterActionType.Album,
       },
+      {
+        text: t('footerAction.file'),
+        icon: file,
+        type: ChatFooterActionType.File,
+      },
     ]
   }
   return [
@@ -75,6 +81,11 @@ const actionList = computed(() => {
       text: t('footerAction.album'),
       icon: image,
       type: ChatFooterActionType.Album,
+    },
+    {
+      text: t('footerAction.file'),
+      icon: file,
+      type: ChatFooterActionType.File,
     },
     {
       text: t('rtc.video'),
@@ -111,6 +122,7 @@ const uploadChooseOptions = reactive({
   accept: 'image/*',
   capture: undefined as any,
 })
+const pendingMessageType = ref(MessageType.PictureMessage)
 const target = ref(null)
 const uploaderRef = ref<UploaderInstance>()
 
@@ -118,7 +130,7 @@ onClickOutside(target, () => emit('closeActionBar'), {
   ignore: ['.van-overlay', '.van-action-sheet__content'],
 })
 
-const onActionSelect = ({ type }: any, idx: number) => {
+const onActionSelect = ({ type }: any) => {
   if (
     type === ChatFooterActionType.VoiceCall ||
     type === ChatFooterActionType.VideoCall
@@ -127,16 +139,24 @@ const onActionSelect = ({ type }: any, idx: number) => {
     inviteRtc(type, [conversationStore.currentConversation.userID])
     return
   }
+  pendingMessageType.value = MessageType.PictureMessage
+  uploadChooseOptions.accept = 'image/*'
+  uploadChooseOptions.capture = undefined
   nextTick(() => uploaderRef.value?.chooseFile())
   actionSheetVisible.value = false
 }
 
 const clickAction = ({ type }: ChatFooterActionItem) => {
-  console.log(type)
   switch (type) {
     case ChatFooterActionType.Album:
       actionSheetActions.value = [...albumActions]
       actionSheetVisible.value = true
+      break
+    case ChatFooterActionType.File:
+      pendingMessageType.value = MessageType.FileMessage
+      uploadChooseOptions.accept = '*/*'
+      uploadChooseOptions.capture = undefined
+      nextTick(() => uploaderRef.value?.chooseFile())
       break
     case ChatFooterActionType.VideoCall:
       actionSheetActions.value = [...videoCallActions]
@@ -151,8 +171,8 @@ const afterReadFile = (data: UploaderFileListItem | UploaderFileListItem[]) => {
   if (!Array.isArray(data)) {
     data = [data]
   }
-  data.map((item) => {
-    emit('getFile', item)
+  data.forEach((item) => {
+    emit('getFile', item, pendingMessageType.value)
   })
 }
 </script>

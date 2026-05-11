@@ -326,6 +326,35 @@ export const getFileType = (name: string) => {
   return name.slice(idx + 1)
 }
 
+export const getFileExtensionLabel = (name: string) => {
+  const idx = name.lastIndexOf('.')
+  const ext = idx > -1 ? name.slice(idx + 1).trim().toUpperCase() : ''
+  return ext || 'FILE'
+}
+
+export const getFileIcon = (name: string) => {
+  const idx = name.lastIndexOf('.')
+  const ext = idx > -1 ? name.slice(idx + 1).trim().toLowerCase() : ''
+
+  if (['doc', 'docx', 'odt', 'pages', 'rtf', 'txt'].includes(ext)) {
+    return word
+  }
+  if (['xls', 'xlsx', 'csv', 'ods', 'numbers'].includes(ext)) {
+    return excel
+  }
+  if (['ppt', 'pptx', 'odp', 'key'].includes(ext)) {
+    return ppt
+  }
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+    return zip
+  }
+  if (ext === 'pdf') {
+    return pdf
+  }
+
+  return unknown
+}
+
 export const secondsToTime = (seconds: number) => {
   let minutes = 0 // min
   let hours = 0 // hour

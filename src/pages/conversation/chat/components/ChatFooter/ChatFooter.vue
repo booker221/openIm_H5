@@ -147,13 +147,18 @@ const clickAddBtn = () => {
   showActionBar.value = !showActionBar.value
 }
 
-const getFile = async (uploadData: UploaderFileListItem) => {
-  let messageType = MessageType.FileMessage
-  if (uploadData.file?.type.includes('image')) {
-    messageType = MessageType.PictureMessage
+const getFile = async (
+  uploadData: UploaderFileListItem,
+  messageType: MessageType,
+) => {
+  if (!uploadData.file) {
+    feedbackToast({
+      error: new Error('file missing'),
+    })
+    return
   }
   const { error, message } = await createFileMessage(
-    uploadData.file!,
+    uploadData.file,
     messageType,
   )
   if (error || !message) {

@@ -5,6 +5,7 @@ export enum RtcType {
 
 export enum ChatFooterActionType {
   Album,
+  File,
   RtcCall,
   VoiceCall,
   VideoCall,
