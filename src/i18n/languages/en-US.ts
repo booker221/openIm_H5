@@ -127,6 +127,7 @@ export const lang = {
   verifyMessage: 'Verification Message',
   sendMessage: 'Send Message',
   groupName: 'Group Name',
+  audioVideoCall: 'Voice and Video Call',
   avatar: 'Avatar',
   groupAvatar: 'Group Avatar',
   clickUpload: 'Click to Upload',

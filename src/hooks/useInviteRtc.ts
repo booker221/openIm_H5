@@ -6,17 +6,11 @@ import emitter from '@/utils/events'
 import { feedbackToast } from '@/utils/common'
 import { getMediaCaptureSupportIssue } from '@/utils/mediaCapture'
 import { i18nt } from '@/i18n'
+import { ChatFooterActionType } from '@/constants/action'
 
 export const useInviteRtc = () => {
   const userStore = useUserStore()
   const conversationStore = useConversationStore()
-
-  enum ChatFooterActionType {
-    Album,
-    RtcCall,
-    VoiceCall,
-    VideoCall,
-  }
 
   const inviteRtc = async (type: ChatFooterActionType, userIDList: string[]) => {
     const captureSupportIssue = getMediaCaptureSupportIssue()

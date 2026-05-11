@@ -30,6 +30,7 @@ interface StateType {
 
 export interface UserCardData {
   baseInfo?: Partial<FriendUserItem & BusinessUserInfo>
+  friendInfo?: FriendUserItem
   groupMemberInfo?: GroupMemberItem
 }
 
@@ -90,11 +91,39 @@ const useStore = defineStore('contact', {
       }
 
       if (item.userID === this.userCardData.baseInfo?.userID) {
-        this.userCardData.baseInfo = { ...item }
+        if (isRemove) {
+          this.userCardData = {
+            ...this.userCardData,
+            friendInfo: undefined,
+            baseInfo: {
+              ...this.userCardData.baseInfo,
+              remark: '',
+            },
+          }
+          return
+        }
+        this.userCardData = {
+          ...this.userCardData,
+          friendInfo: { ...item },
+          baseInfo: {
+            ...this.userCardData.baseInfo,
+            ...item,
+          },
+        }
       }
     },
     pushNewFriend(item: FriendUserItem) {
       this.friendList.push(item)
+      if (item.userID === this.userCardData.baseInfo?.userID) {
+        this.userCardData = {
+          ...this.userCardData,
+          friendInfo: { ...item },
+          baseInfo: {
+            ...this.userCardData.baseInfo,
+            ...item,
+          },
+        }
+      }
     },
     async getGroupListFromReq() {
       try {
@@ -260,6 +289,17 @@ const useStore = defineStore('contact', {
     updateUnHandleGroupApplicationNum(num: number) {
       this.unHandleGroupApplicationNum = num
     },
+    updateUserCardFriendInfo(friendInfo?: FriendUserItem) {
+      this.userCardData = {
+        ...this.userCardData,
+        friendInfo,
+        baseInfo: {
+          ...this.userCardData.baseInfo,
+          ...(friendInfo ?? {}),
+          ...(friendInfo ? {} : { remark: '' }),
+        },
+      }
+    },
     setUserCardData(data: UserCardData) {
       this.userCardData = { ...data }
       router.push('userCard')
@@ -273,34 +313,49 @@ const useStore = defineStore('contact', {
       this.userCardData.groupMemberInfo = { ...item }
     },
     async getUserCardData(sourceID: string, groupID?: string) {
-      let baseInfo: any
-      let groupMemberInfo: GroupMemberItem | undefined
-      const friendInfo = this.storeFriendList.find((item) => item.userID === sourceID)
-      if (friendInfo) {
-        baseInfo = { ...baseInfo, ...friendInfo }
-      } else {
-        const { data: res } = await IMSDK.getUsersInfo([sourceID])
-        baseInfo = { ...baseInfo, ...res[0] }
+      const [
+        friendRes,
+        userRes,
+        businessRes,
+        groupMemberRes,
+      ] = await Promise.all([
+        IMSDK.getSpecifiedFriendsInfo({
+          friendUserIDList: [sourceID],
+          filterBlack: false,
+        }).catch(() => ({ data: [] as FriendUserItem[] })),
+        IMSDK.getUsersInfo([sourceID]).catch(() => ({ data: [] as any[] })),
+        getBusinessInfo(sourceID).catch(() => null),
+        groupID
+          ? IMSDK.getSpecifiedGroupMembersInfo({
+              groupID,
+              userIDList: [sourceID],
+            }).catch(() => ({ data: [] as GroupMemberItem[] }))
+          : Promise.resolve({ data: [] as GroupMemberItem[] }),
+      ])
+
+      const friendInfo = friendRes.data[0]
+      const userInfo = userRes.data[0]
+      const businessInfo = businessRes?.data.users?.[0]
+      const groupMemberInfo = groupMemberRes.data[0]
+
+      const baseInfo = {
+        ...(userInfo ?? {}),
+        ...(friendInfo ?? {}),
+        ...(businessInfo ?? {}),
       }
-      const { data } = await getBusinessInfo(sourceID)
-      baseInfo = { ...baseInfo, ...data.users[0] }
-      if (groupID) {
-        const { data } = await IMSDK.getSpecifiedGroupMembersInfo({
-          groupID,
-          userIDList: [sourceID],
-        })
-        groupMemberInfo = data[0]
-      }
-      this.userCardData = {
-        baseInfo,
-        groupMemberInfo,
-      }
-      if (!baseInfo) {
+
+      if (!baseInfo.userID) {
         feedbackToast({
           error: i18nt('messageTip.getUserInfoFailed'),
           message: i18nt('messageTip.getUserInfoFailed'),
         })
         return
+      }
+
+      this.userCardData = {
+        baseInfo,
+        friendInfo,
+        groupMemberInfo,
       }
       router.push('userCard')
     },

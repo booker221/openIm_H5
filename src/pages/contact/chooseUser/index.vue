@@ -126,6 +126,13 @@ const checkedGroupList = ref<GroupItem[]>([])
 const disabledUserIDList = ref<string[]>([])
 
 const chooseType = history.state.chooseType
+const shareCardData = computed(() => {
+  try {
+    return history.state.extraData ? JSON.parse(history.state.extraData) : null
+  } catch (error) {
+    return null
+  }
+})
 
 const showGroupAndUser = computed(() => canChooseGroupTypes.includes(chooseType))
 const allCheckedList = computed(
@@ -239,7 +246,6 @@ const remove = (item: Partial<GenericListItemSource>) => {
 }
 
 const confirm = async () => {
-  console.log('confirm')
   switch (chooseType) {
     case ContactChooseEnum.LaunchGroup:
       router.replace({
@@ -289,6 +295,38 @@ const confirm = async () => {
         router.back()
       } catch (error) {
         feedbackToast({ message: t('messageTip.forwardFailed'), error })
+      }
+      break
+    case ContactChooseEnum.ShareCard:
+      if (!shareCardData.value?.userID) {
+        feedbackToast({ message: t('messageTip.sendFailed'), error: true })
+        return
+      }
+      if (!allCheckedList.value.length) {
+        return
+      }
+
+      try {
+        for (const checkedItem of allCheckedList.value) {
+          const { data: cardMessage } = await IMSDK.createCardMessage({
+            userID: shareCardData.value.userID,
+            nickname: shareCardData.value.nickname || '',
+            faceURL: shareCardData.value.faceURL || '',
+            ex: '',
+          })
+
+          await sendMessage({
+            recvID: checkedItem.userID,
+            groupID: checkedItem.groupID,
+            message: cardMessage,
+            needOpreateMessage: false,
+          })
+        }
+
+        feedbackToast({ message: t('messageTip.sendSuccess') })
+        router.back()
+      } catch (error) {
+        feedbackToast({ message: t('messageTip.sendFailed'), error })
       }
       break
     default:

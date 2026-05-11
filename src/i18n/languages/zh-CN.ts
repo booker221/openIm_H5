@@ -127,6 +127,7 @@ export const lang = {
   verifiyMessage: '验证信息',
   sendMessage: '发消息',
   groupName: '群名称',
+  audioVideoCall: '音视频通话',
   avatar: '头像',
   groupAvatar: '群头像',
   clickUpload: '点击上传',

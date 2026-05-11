@@ -2,11 +2,11 @@
   <div class="page_container !overflow-y-auto">
     <NavBar>
       <img
-        v-if="!isSelf"
+        v-if="showFriendSettingMore"
         class="h-[23px] min-w-[23px]"
         :src="more"
         alt="more"
-        @click="$router.push('userCardSetting')"
+        @click="toFriendSetting"
       />
     </NavBar>
     <div class="flex-1">
@@ -35,7 +35,7 @@
             </span>
           </div>
           <div
-            v-if="cannAddFriend && !isSelf"
+            v-if="canAddFriend"
             class="ml-auto flex h-[30px] flex-row items-center justify-center rounded-md bg-primary px-2 py-1"
             @click="toAddFriend"
           >
@@ -51,20 +51,31 @@
       </div>
 
       <CardDescItem
-        v-if="friendInfo"
+        v-if="showUserInfoEntry"
         class="mb-2"
         :lable="$t('userInfo')"
         arrow
-        @click="$router.push('userCardDetails')"
+        @click="router.push('/userCardDetails')"
       />
     </div>
 
-    <div class="mb-6 mt-8 flex w-full justify-between px-[22px]">
+    <div
+      v-if="showFriendActionBar"
+      class="sticky bottom-0 mt-6 flex w-full gap-[11px] bg-[rgba(248,249,250,0.92)] px-[12px] py-4 backdrop-blur"
+    >
       <van-button
-        v-if="!isSelf"
+        :icon="call"
+        plain
+        type="default"
+        class="w-full !border-0 !bg-white text-base !text-[#0C1C33]"
+        @click="toCall"
+      >
+        {{ $t('audioVideoCall') }}
+      </van-button>
+      <van-button
         :icon="message"
         type="primary"
-        class="!ml-1 w-full text-base"
+        class="w-full !border-0 text-base"
         @click="toConversation"
       >
         {{ $t('sendMessage') }}
@@ -75,43 +86,40 @@
 
 <script setup lang="ts">
 import message from '@assets/images/userCard/message.png'
+import call from '@assets/images/userCard/call.png'
 import add from '@assets/images/userCard/add.png'
 import more from '@assets/images/chatHeader/more.png'
 
 import NavBar from '@/components/NavBar/index.vue'
 import Avatar from '@/components/Avatar/index.vue'
 import CardDescItem from '@/components/CardDescItem/index.vue'
-import { IMSDK } from '@/utils/imCommon'
 import { feedbackToast, copy2Text } from '@/utils/common'
 import useContactStore from '@/store/modules/contact'
-import useCurrentMemberRole from '@/hooks/useCurrentMemberRole'
-import {
-  AllowType,
-  GroupJoinSource,
-  GroupMemberRole,
-  SessionType,
-} from '@openim/wasm-client-sdk'
+import { SessionType } from '@openim/wasm-client-sdk'
 import dayjs from 'dayjs'
 import useUserStore from '@/store/modules/user'
-import useConversationStore from '@/store/modules/conversation'
+import useAppConfigStore from '@/store/modules/appConfig'
 import { BusinessAllowType } from '@/api/data'
 import useConversationToggle from '@/hooks/useConversationToggle'
+import { useInviteRtc } from '@/hooks/useInviteRtc'
 import { showImagePreview } from 'vant'
+import { ChatFooterActionType } from '@/constants/action'
 
 const { toSpecifiedConversation } = useConversationToggle()
-const conversationStore = useConversationStore()
 const contactStore = useContactStore()
 const userStore = useUserStore()
+const appConfigStore = useAppConfigStore()
 const router = useRouter()
 const { t } = useI18n()
+const { inviteRtc } = useInviteRtc()
 
-const isSelf =
-  contactStore.storeUserCardData.baseInfo?.userID === userStore.selfInfo.userID
-const friendInfo = computed(() =>
-  contactStore.storeFriendList.find(
-    (friend) => friend.userID === contactStore.storeUserCardData.baseInfo?.userID,
-  ),
+const isSelf = computed(
+  () => contactStore.storeUserCardData.baseInfo?.userID === userStore.selfInfo.userID,
 )
+const friendInfo = computed(() => contactStore.storeUserCardData.friendInfo)
+const isFriendUser = computed(() => !!friendInfo.value)
+const userType = computed(() => Number((userStore.storeSelfInfo as any).userType ?? 1))
+const friendsSwitch = computed(() => !!appConfigStore.storeAppConfig?.friends_switch)
 
 // group
 const comptJoinTime = computed(() =>
@@ -122,19 +130,22 @@ const comptJoinTime = computed(() =>
     : '',
 )
 
-const cannAddFriend = computed(() => {
-  if (!!friendInfo.value) {
-    return false
-  }
-
-  return true
-})
-
-const checkMemberInGroup = async () => {
-  if (!contactStore.storeUserCardData.groupMemberInfo) {
-    return
-  }
-}
+const canAddFriend = computed(
+  () =>
+    !isSelf.value &&
+    !isFriendUser.value &&
+    contactStore.storeUserCardData.baseInfo?.allowAddFriend !==
+      BusinessAllowType.NotAllow &&
+    (userType.value !== 0 || friendsSwitch.value),
+)
+const showFriendSettingMore = computed(() => !isSelf.value && isFriendUser.value)
+const showFriendActionBar = computed(() => !isSelf.value && isFriendUser.value)
+const showUserInfoEntry = computed(
+  () =>
+    isSelf.value ||
+    isFriendUser.value ||
+    !!contactStore.storeUserCardData.groupMemberInfo,
+)
 
 // events
 const toConversation = () => {
@@ -142,6 +153,16 @@ const toConversation = () => {
     sourceID: contactStore.storeUserCardData.baseInfo?.userID!,
     sessionType: SessionType.Single,
   })
+}
+
+const toCall = () => {
+  inviteRtc(ChatFooterActionType.VoiceCall, [
+    contactStore.storeUserCardData.baseInfo?.userID!,
+  ])
+}
+
+const toFriendSetting = () => {
+  router.push('/userCardSetting')
 }
 
 const toAddFriend = () => {
@@ -172,10 +193,6 @@ const avatarPreview = () => {
     })
   }
 }
-
-onBeforeMount(() => {
-  checkMemberInGroup()
-})
 </script>
 
 <style lang="scss" scoped></style>

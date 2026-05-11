@@ -60,12 +60,14 @@ import arrows_left from '@/assets/images/chatHeader/arrows_left.png'
 import more from '@/assets/images/chatHeader/more.png'
 import useConversationStore from '@/store/modules/conversation'
 import useMessageStore from '@/store/modules/message'
+import useContactStore from '@/store/modules/contact'
 import useChatMessageActions from '../useChatMessageActions'
 import { SessionType } from '@openim/wasm-client-sdk'
 
 const router = useRouter()
 const conversationStore = useConversationStore()
 const messageStore = useMessageStore()
+const contactStore = useContactStore()
 const { deleteSelectedMessages, exitMultiSelectMode, forwardSelectedMessages, selectAllMessages } =
   useChatMessageActions()
 
@@ -101,7 +103,12 @@ const back = () => {
 }
 
 const toSetting = () => {
-  router.push(isSingle.value ? 'singleSetting' : 'groupSetting')
+  if (isSingle.value) {
+    contactStore.getUserCardData(conversationStore.storeCurrentConversation.userID)
+    return
+  }
+
+  router.push('groupSetting')
 }
 </script>
 
