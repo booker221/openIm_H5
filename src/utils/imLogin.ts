@@ -119,6 +119,8 @@ const bootstrapIMStores = async () => {
     userStore.getSelfInfoFromReq(),
     conversationStore.getUnReadCountFromReq(),
     conversationStore.getConversationListFromReq(),
+    contactStore.getFriendListFromReq(),
+    contactStore.getGroupListFromReq(),
     contactStore.getBlackListFromReq(),
     contactStore.getRecvFriendApplicationListFromReq(),
     contactStore.getSendFriendApplicationListFromReq(),

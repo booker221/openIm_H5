@@ -12,7 +12,7 @@
     </div>
     <div class="flex-1 overflow-hidden">
       <virtual-list v-if="showGroupAndUser && renderConversationList.length > 0"
-        class="my_scrollbar h-full overflow-scroll bg-white" :data-key="'groupID'"
+        class="my_scrollbar h-full overflow-scroll bg-white" :data-key="'conversationID'"
         :data-sources="renderConversationList" :data-component="GenericListItem" :estimate-size="88" :extra-props="(item: ConversationItem) => ({
             total: renderConversationList.length,
             showCheck: true,
@@ -49,6 +49,7 @@
                   " @click="clickFriend(friend)" />
             </template>
           </van-index-bar>
+          <CommonEmpty v-else-if="activeTab === 0" />
           <virtual-list v-if="activeTab === 1 && renderGroupList.length > 0"
             class="my_scrollbar h-full overflow-y-auto overflow-x-hidden bg-white" :data-key="'groupID'"
             :data-sources="renderGroupList" :data-component="GenericListItem" :estimate-size="88" :extra-props="(item: GroupItem) => ({
@@ -62,6 +63,7 @@
                 onClick: () => updateGroupChoose(item),
               })
               " />
+          <CommonEmpty v-else-if="activeTab === 1" />
         </div>
       </div>
     </van-popup>
@@ -73,6 +75,7 @@ import NavBar from '@/components/NavBar/index.vue'
 import DetailInfoItem from '@/components/DetailInfoItem/index.vue'
 import GenericListItem from '@/components/GenericListItem/index.vue'
 import CheckedFooter from '@/components/CheckedFooter/index.vue'
+import CommonEmpty from '@/components/CommonEmpty/index.vue'
 import VirtualList from '@components/VirtualList'
 
 import type {
@@ -147,10 +150,12 @@ const renderFriendList = computed(() =>
       : contactStore.storeFriendList,
   ),
 )
-const renderConversationList = conversationStore.storeConversationList.filter(
-  (cve) =>
-    cve.conversationType !== SessionType.Notification &&
-    (keyword.value ? cve.showName.includes(keyword.value) : true),
+const renderConversationList = computed(() =>
+  conversationStore.storeConversationList.filter(
+    (cve) =>
+      cve.conversationType !== SessionType.Notification &&
+      (keyword.value ? cve.showName.includes(keyword.value) : true),
+  ),
 )
 const renderGroupList = computed(() =>
   keyword.value
@@ -162,6 +167,22 @@ const renderGroupList = computed(() =>
 
 const isBackRoute = chooseType !== ContactChooseEnum.LaunchGroup
 
+const ensureContactData = async () => {
+  const tasks: Promise<unknown>[] = []
+
+  if (!contactStore.storeFriendList.length) {
+    tasks.push(contactStore.getFriendListFromReq())
+  }
+
+  if (showGroupAndUser.value && !contactStore.storeGroupList.length) {
+    tasks.push(contactStore.getGroupListFromReq())
+  }
+
+  if (tasks.length) {
+    await Promise.allSettled(tasks)
+  }
+}
+
 onBeforeMount(() => {
   const state = history.state
   checkedUserList.value = state.prevCheckedUserList
@@ -170,6 +191,10 @@ onBeforeMount(() => {
   checkedGroupList.value = state.prevCheckedGroupList
     ? JSON.parse(state.prevCheckedGroupList)
     : []
+})
+
+onMounted(async () => {
+  await ensureContactData()
   checkDisabled()
 })
 
@@ -185,7 +210,11 @@ const checkDisabled = () => {
   })
 }
 
-const showPopType = (actionType: number) => {
+const showPopType = async (actionType: number) => {
+  await ensureContactData()
+  if (actionType === 0) {
+    checkDisabled()
+  }
   showPop.value = true
   activeTab.value = actionType
 }

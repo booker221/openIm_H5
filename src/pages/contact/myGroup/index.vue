@@ -76,6 +76,12 @@ const toGroup = (group: GroupItem) => {
     path: 'groupCard',
   })
 }
+
+onMounted(() => {
+  if (!contactStore.storeGroupList.length) {
+    contactStore.getGroupListFromReq()
+  }
+})
 </script>
 
 <style lang="scss" scoped>

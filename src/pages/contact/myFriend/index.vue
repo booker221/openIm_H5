@@ -47,15 +47,24 @@ const vsl = ref()
 const contactStore = useContactStore()
 
 const renderList = computed(() => formatContacts(contactStore.storeFriendList))
+const newList = computed<(FriendUserItem | IndexItem)[]>(() => {
+  const list: (FriendUserItem | IndexItem)[] = []
 
-const newList: (FriendUserItem | IndexItem)[] = []
-
-renderList.value.indexList.map((_, i) => {
-  newList.push({
-    title: renderList.value.indexList[i],
-    userID: renderList.value.indexList[i],
+  renderList.value.indexList.forEach((_, i) => {
+    list.push({
+      title: renderList.value.indexList[i],
+      userID: renderList.value.indexList[i],
+    })
+    list.push(...renderList.value.dataList[i])
   })
-  newList.push(...renderList.value.dataList[i])
+
+  return list
+})
+
+onMounted(() => {
+  if (!contactStore.storeFriendList.length) {
+    contactStore.getFriendListFromReq()
+  }
 })
 
 const toUserCard = (friend: FriendUserItem) => {
