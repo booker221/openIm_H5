@@ -1,18 +1,22 @@
 <template>
   <ContactMenuListItem
-    v-for="menu in contactMenuList"
+    v-for="(menu, idx) in contactMenuList"
+    :key="menu.id"
     :icon="menu.icon"
     :title="menu.text"
     :badge="menu.badge"
+    :show-divider="idx !== contactMenuList.length - 1"
     @click="menuClick(menu.id)"
   />
 
   <div class="mt-[10px]">
     <ContactMenuListItem
-      v-for="menu in myMenuList"
+      v-for="(menu, idx) in myMenuList"
+      :key="menu.id"
       :icon="menu.icon"
       :title="menu.text"
       :badge="menu.badge"
+      :show-divider="idx !== myMenuList.length - 1"
       @click="menuClick(menu.id)"
     />
   </div>

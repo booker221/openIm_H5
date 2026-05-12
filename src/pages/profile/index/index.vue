@@ -45,9 +45,14 @@
 
     <div class="mx-auto mt-[10px] w-[90%] rounded-md bg-white">
       <div
-        v-for="menu in profileMenus"
+        v-for="(menu, idx) in profileMenus"
         :key="menu.title"
-        class="flex items-center justify-between p-4"
+        class="relative flex items-center justify-between p-4"
+        :class="
+          idx !== profileMenus.length - 1
+            ? `after:absolute after:bottom-0 after:left-[55px] after:right-0 after:border-b after:border-[#E8EAEF] after:content-['']`
+            : ''
+        "
         @click="menuClick(menu.route)"
       >
         <div class="flex">
@@ -87,7 +92,7 @@ const userStore = useUserStore()
 const appConfigStore = useAppConfigStore()
 const walletEnabled = computed(() => !!appConfigStore.storeAppConfig?.wallet)
 const profileQrCanvasRef = ref<HTMLCanvasElement>()
-const profileQrSize = 40
+const profileQrSize = 30
 const myQrContent = computed(() =>
   buildFriendQrCodeContent(userStore.storeSelfInfo.userID),
 )

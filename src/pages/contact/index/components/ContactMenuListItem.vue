@@ -1,5 +1,12 @@
 <template>
-  <div class="flex h-[66px] items-center bg-white px-[22px]">
+  <div
+    class="relative flex h-[66px] items-center bg-white px-[22px]"
+    :class="
+      showDivider
+        ? `after:absolute after:bottom-0 after:left-[80px] after:right-0 after:border-b after:border-[#E8EAEF] after:content-['']`
+        : ''
+    "
+  >
     <Avatar :src="icon" :size="42" />
     <div class="ml-4 flex h-full w-full items-center justify-between">
       <div>{{ title }}</div>
@@ -18,9 +25,12 @@ type ContactMenuProps = {
   icon: string
   title: string
   badge?: number
+  showDivider?: boolean
 }
 
-const props = defineProps<ContactMenuProps>()
+withDefaults(defineProps<ContactMenuProps>(), {
+  showDivider: true,
+})
 </script>
 
 <style lang="scss" scoped>
