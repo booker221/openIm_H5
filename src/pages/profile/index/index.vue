@@ -87,7 +87,7 @@ const userStore = useUserStore()
 const appConfigStore = useAppConfigStore()
 const walletEnabled = computed(() => !!appConfigStore.storeAppConfig?.wallet)
 const profileQrCanvasRef = ref<HTMLCanvasElement>()
-const profileQrSize = 48
+const profileQrSize = 40
 const myQrContent = computed(() =>
   buildFriendQrCodeContent(userStore.storeSelfInfo.userID),
 )

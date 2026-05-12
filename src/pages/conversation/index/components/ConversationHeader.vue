@@ -1,5 +1,5 @@
 <template>
-  <div class="header px-[22px] py-4">
+  <div class="header px-[22px] py-4 mt-[10px]">
     <div class="flex items-center">
       <Avatar
         :size="48"
