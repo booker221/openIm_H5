@@ -30,9 +30,18 @@ import { IMSDK } from '@/utils/imCommon'
 import { feedbackToast } from '@/utils/common'
 
 const contactStore = useContactStore()
+const { t } = useI18n()
 
-const blackRemove = ({ userID }: BlackUserItem) => {
-  IMSDK.removeBlack(userID).catch((error) => feedbackToast({ error }))
+const blackRemove = async (item: BlackUserItem) => {
+  contactStore.updateBlackList(item, true)
+
+  try {
+    await IMSDK.removeBlack(item.userID)
+    feedbackToast({ message: t('removeBlackSuccess') })
+  } catch (error) {
+    contactStore.updateBlackList(item)
+    feedbackToast({ error })
+  }
 }
 </script>
 

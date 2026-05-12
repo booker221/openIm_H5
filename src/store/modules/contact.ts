@@ -34,6 +34,28 @@ export interface UserCardData {
   groupMemberInfo?: GroupMemberItem
 }
 
+type BlackUserSource = Pick<
+  Partial<FriendUserItem & BusinessUserInfo>,
+  'userID' | 'nickname' | 'faceURL' | 'ex'
+>
+
+const buildBlackUserItem = (user?: BlackUserSource): BlackUserItem | undefined => {
+  if (!user?.userID) {
+    return undefined
+  }
+
+  return {
+    addSource: 0,
+    userID: user.userID,
+    createTime: Date.now(),
+    ex: user.ex ?? '',
+    faceURL: user.faceURL ?? '',
+    nickname: user.nickname ?? '',
+    operatorUserID: '',
+    ownerUserID: '',
+  }
+}
+
 const getUserCardRouteQuery = (data: UserCardData) => {
   const sourceID = data.baseInfo?.userID
   if (!sourceID) {
@@ -181,16 +203,34 @@ const useStore = defineStore('contact', {
       const idx = this.blackList.findIndex(
         (user: BlackUserItem) => user.userID === item.userID,
       )
-      if (idx !== -1) {
-        if (isRemove) {
+
+      if (isRemove) {
+        if (idx !== -1) {
           this.blackList.splice(idx, 1)
-          return
         }
-        this.blackList[idx] = { ...item }
+        return
       }
+
+      if (idx !== -1) {
+        this.blackList[idx] = {
+          ...this.blackList[idx],
+          ...item,
+        }
+        return
+      }
+
+      this.blackList.unshift({ ...item })
     },
     pushNewBlack(item: BlackUserItem) {
-      this.blackList.push(item)
+      this.updateBlackList(item)
+    },
+    setBlackUserState(user: BlackUserSource | undefined, isBlack: boolean) {
+      const blackUser = buildBlackUserItem(user)
+      if (!blackUser) {
+        return
+      }
+
+      this.updateBlackList(blackUser, !isBlack)
     },
     async getRecvFriendApplicationListFromReq() {
       try {

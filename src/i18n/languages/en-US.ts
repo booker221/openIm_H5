@@ -206,6 +206,8 @@ export const lang = {
   cancelDoNotDisturbSuccess: 'Do not disturb disabled',
   setConversationRecvMessageOptFailed:
     'Failed to update do not disturb status',
+  addBlackSuccess: 'Added to blacklist',
+  removeBlackSuccess: 'Removed from blacklist',
   clearConversationMessagesFailed: 'Failed to clear chat history',
   clearChatHistorySuccess: 'Chat history cleared',
   deleteConversationSuccess: 'Conversation deleted',

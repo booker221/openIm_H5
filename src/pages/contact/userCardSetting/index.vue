@@ -134,20 +134,37 @@ const comptIsBlack = computed(
     ) > -1,
 )
 const toggleBlackLoading = ref(false)
-const toggleBlack = (newValue: boolean) => {
-  toggleBlackLoading.value = true
-  if (newValue) {
-    IMSDK.addBlack({
-      toUserID: contactStore.storeUserCardData.baseInfo?.userID!,
-      ex: '',
-    })
-      .catch((error) => feedbackToast({ error }))
-      .finally(() => (toggleBlackLoading.value = false))
+const toggleBlack = async (newValue: boolean) => {
+  if (toggleBlackLoading.value || newValue === comptIsBlack.value) {
     return
   }
-  IMSDK.removeBlack(contactStore.storeUserCardData.baseInfo?.userID!)
-    .catch((error) => feedbackToast({ error }))
-    .finally(() => (toggleBlackLoading.value = false))
+
+  const baseInfo = contactStore.storeUserCardData.baseInfo
+  if (!baseInfo?.userID) {
+    return
+  }
+
+  toggleBlackLoading.value = true
+  contactStore.setBlackUserState(baseInfo, newValue)
+
+  try {
+    if (newValue) {
+      await IMSDK.addBlack({
+        toUserID: baseInfo.userID,
+        ex: '',
+      })
+      feedbackToast({ message: t('addBlackSuccess') })
+      return
+    }
+
+    await IMSDK.removeBlack(baseInfo.userID)
+    feedbackToast({ message: t('removeBlackSuccess') })
+  } catch (error) {
+    contactStore.setBlackUserState(baseInfo, !newValue)
+    feedbackToast({ error })
+  } finally {
+    toggleBlackLoading.value = false
+  }
 }
 
 const applyConversationToStore = (conversation: ConversationItem) => {

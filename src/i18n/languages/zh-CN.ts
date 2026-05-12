@@ -204,6 +204,8 @@ export const lang = {
   setDoNotDisturbSuccess: '已开启消息免打扰',
   cancelDoNotDisturbSuccess: '已关闭消息免打扰',
   setConversationRecvMessageOptFailed: '设置消息免打扰失败',
+  addBlackSuccess: '拉黑成功',
+  removeBlackSuccess: '已移除黑名单',
   clearConversationMessagesFailed: '清空聊天记录失败',
   clearChatHistorySuccess: '聊天记录已清空',
   deleteConversationSuccess: '会话已删除',
