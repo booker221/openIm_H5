@@ -6,6 +6,7 @@
       class="message_menu"
       :style="{
         top: `${top}px`,
+        gridTemplateColumns: `repeat(${menuColumns}, minmax(0, 1fr))`,
       }"
       @click.stop
     >
@@ -24,6 +25,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 type MessageMenuKey =
   | 'copy'
   | 'forward'
@@ -39,7 +42,7 @@ interface MenuItem {
   label: string
 }
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   top: number
   items: MenuItem[]
@@ -49,6 +52,13 @@ const emit = defineEmits<{
   (event: 'close'): void
   (event: 'select', key: MessageMenuKey): void
 }>()
+
+const menuColumns = computed(() => {
+  const count = props.items.length
+  if (count <= 0) return 1
+  if (count <= 5) return count
+  return 4
+})
 </script>
 
 <style lang="scss" scoped>
@@ -64,26 +74,30 @@ const emit = defineEmits<{
   left: 16px;
   right: 16px;
   z-index: 100;
-  display: flex;
+  display: grid;
   align-items: stretch;
-  overflow-x: auto;
   border-radius: 12px;
   background: rgba(20, 20, 20, 0.92);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
-  padding: 10px 8px;
+  padding: 12px 6px;
+  row-gap: 8px;
+  column-gap: 4px;
 }
 
 .menu_item {
   border: none;
   background: transparent;
   color: #fff;
-  min-width: 68px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 4px 0;
   font-size: 12px;
-  line-height: 1;
+  line-height: 1.1;
+  text-align: center;
 }
 </style>

@@ -27,19 +27,7 @@
         class="ml-3 flex cursor-pointer flex-col items-center"
         @click="menuClick('/myQrCode')"
       >
-        <div
-          class="rounded-[12px] border border-[#DDEAFB] bg-white p-1 shadow-[0_4px_12px_rgba(12,28,51,0.08)]"
-        >
-          <canvas
-            ref="profileQrCanvasRef"
-            :width="profileQrSize"
-            :height="profileQrSize"
-            :style="{
-              width: `${profileQrSize}px`,
-              height: `${profileQrSize}px`,
-            }"
-          />
-        </div>
+        <img class="h-[25px] w-[25px]" :src="qr_code" alt="qr-code" />
       </div>
     </view>
 
@@ -72,17 +60,16 @@
 </template>
 
 <script name="profile" setup lang="ts">
-import UQRCode from 'uqrcodejs'
 import Avatar from '@/components/Avatar/index.vue'
 import back from '@assets/images/profile/back.png'
 import copy_icon from '@assets/images/profile/copy.png'
 import bg from '@assets/images/profile/bg.png'
+import qr_code from '@assets/images/profile/qr_code.png'
 
 import { showConfirmDialog, showToast } from 'vant'
 import useUserStore from '@/store/modules/user'
 import { useClipboard } from '@vueuse/core'
 import useAppConfigStore from '@/store/modules/appConfig'
-import { buildFriendQrCodeContent } from '@/constants/qrcode'
 
 const { copy, isSupported } = useClipboard()
 const { t } = useI18n()
@@ -91,11 +78,6 @@ const router = useRouter()
 const userStore = useUserStore()
 const appConfigStore = useAppConfigStore()
 const walletEnabled = computed(() => !!appConfigStore.storeAppConfig?.wallet)
-const profileQrCanvasRef = ref<HTMLCanvasElement>()
-const profileQrSize = 30
-const myQrContent = computed(() =>
-  buildFriendQrCodeContent(userStore.storeSelfInfo.userID),
-)
 
 type ProfileMenu = {
   icon: string
@@ -175,24 +157,6 @@ const copyUserID = () => {
   )
 }
 
-const renderProfileQrCode = async () => {
-  await nextTick()
-
-  const canvas = profileQrCanvasRef.value
-  const ctx = canvas?.getContext('2d')
-
-  if (!canvas || !ctx || !myQrContent.value) return
-
-  ctx.clearRect(0, 0, profileQrSize, profileQrSize)
-
-  const qr = new UQRCode()
-  qr.data = myQrContent.value
-  qr.size = profileQrSize
-  qr.make()
-  qr.canvasContext = ctx
-  qr.drawCanvas()
-}
-
 const tryLogout = () => {
   showConfirmDialog({
     message: t('messageTip.tryLogout'),
@@ -210,8 +174,6 @@ const tryLogout = () => {
     },
   }).catch(() => {})
 }
-
-watch(myQrContent, renderProfileQrCode, { immediate: true })
 
 onMounted(() => {
   if (!appConfigStore.storeLoaded) {

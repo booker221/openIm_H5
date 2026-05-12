@@ -119,6 +119,22 @@ const activeMessageKey = computed(() =>
   activeMessage.value ? getMessageUniqueKey(activeMessage.value) : '',
 )
 
+const getMessageMenuColumns = (count: number) => {
+  if (count <= 0) return 1
+  if (count <= 5) return count
+  return 4
+}
+
+const getMessageMenuHeight = (count: number) => {
+  const columns = getMessageMenuColumns(count)
+  const rows = Math.ceil(count / columns)
+  const paddingY = 24
+  const rowGap = 8
+  const rowHeight = 52
+
+  return paddingY + rows * rowHeight + (rows - 1) * rowGap
+}
+
 const openGroupAnnouncement = () => {
   router.push('/groupAnnouncement')
 }
@@ -128,7 +144,7 @@ const closeMessageMenu = () => {
   activeMessage.value = undefined
 }
 
-const getMenuTop = (event: Event) => {
+const getMenuTop = (event: Event, actionCount: number) => {
   const pointerY =
     event instanceof MouseEvent
       ? event.clientY
@@ -136,7 +152,7 @@ const getMenuTop = (event: Event) => {
           (event as TouchEvent).changedTouches?.[0])?.clientY ??
         window.innerHeight / 2
 
-  const menuHeight = 92
+  const menuHeight = getMessageMenuHeight(actionCount)
   const topGap = 12
   let nextTop = pointerY - menuHeight - topGap
   if (nextTop < 12) {
@@ -145,20 +161,7 @@ const getMenuTop = (event: Event) => {
   return Math.min(nextTop, window.innerHeight - menuHeight - 12)
 }
 
-const openMessageMenu = (message: ExMessageItem, event: Event) => {
-  activeMessage.value = message
-  messageMenuTop.value = getMenuTop(event)
-  showMessageMenu.value = true
-}
-
-const onScoll = (...args: Parameters<typeof rawOnScoll>) => {
-  closeMessageMenu()
-  rawOnScoll(...args)
-}
-
-const messageMenuActions = computed(() => {
-  if (!activeMessage.value) return []
-
+const buildMessageMenuActions = (message: ExMessageItem) => {
   const actions = [
     {
       key: 'copy',
@@ -191,7 +194,7 @@ const messageMenuActions = computed(() => {
     label: string
   }>
 
-  if (canRecallMessage(activeMessage.value)) {
+  if (canRecallMessage(message)) {
     actions.push({
       key: 'revoke',
       icon: 'replay',
@@ -199,7 +202,7 @@ const messageMenuActions = computed(() => {
     })
   }
 
-  if (canDeleteMessage(activeMessage.value)) {
+  if (canDeleteMessage(message)) {
     actions.push({
       key: 'delete',
       icon: 'delete-o',
@@ -208,6 +211,23 @@ const messageMenuActions = computed(() => {
   }
 
   return actions
+}
+
+const openMessageMenu = (message: ExMessageItem, event: Event) => {
+  const actions = buildMessageMenuActions(message)
+  activeMessage.value = message
+  messageMenuTop.value = getMenuTop(event, actions.length)
+  showMessageMenu.value = true
+}
+
+const onScoll = (...args: Parameters<typeof rawOnScoll>) => {
+  closeMessageMenu()
+  rawOnScoll(...args)
+}
+
+const messageMenuActions = computed(() => {
+  if (!activeMessage.value) return []
+  return buildMessageMenuActions(activeMessage.value)
 })
 
 const selectMessageMenu = async (
