@@ -221,7 +221,7 @@ onMounted(async () => {
     }
   }
 
-  if (!conversationStore.storeCurrentConversation.groupID) {
+  if (!conversationStore.storeCurrentConversation.conversationID) {
     router.replace('/conversation')
   }
 })

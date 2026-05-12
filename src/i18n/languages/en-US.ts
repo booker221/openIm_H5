@@ -212,6 +212,8 @@ export const lang = {
   clearChatHistorySuccess: 'Chat history cleared',
   deleteConversationSuccess: 'Conversation deleted',
   deleteConversationFailed: 'Failed to delete conversation',
+  chatDetail: 'Chat Details',
+  searchChatContent: 'Search Chat Content',
   setNickname: 'Set Remark',
   shareFriend: 'Recommend to Friends',
   unfriend: 'Unfriend',

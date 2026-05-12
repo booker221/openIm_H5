@@ -66,6 +66,11 @@ const conversationRouters: Array<RouteRecordRaw> = [
     name: 'GroupChatHistory',
     component: () => import('@pages/conversation/groupChatHistory/index.vue'),
   },
+  {
+    path: '/chatHistory',
+    name: 'ChatHistory',
+    component: () => import('@pages/conversation/groupChatHistory/index.vue'),
+  },
 ]
 
 export default conversationRouters

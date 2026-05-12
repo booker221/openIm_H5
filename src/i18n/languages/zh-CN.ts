@@ -210,6 +210,8 @@ export const lang = {
   clearChatHistorySuccess: '聊天记录已清空',
   deleteConversationSuccess: '会话已删除',
   deleteConversationFailed: '删除会话失败',
+  chatDetail: '聊天详情',
+  searchChatContent: '查找聊天内容',
   setNickname: '设置备注',
   shareFriend: '把他推荐给朋友',
   unfriend: '解除好友关系',
