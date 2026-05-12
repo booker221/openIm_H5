@@ -34,6 +34,20 @@ export interface UserCardData {
   groupMemberInfo?: GroupMemberItem
 }
 
+const getUserCardRouteQuery = (data: UserCardData) => {
+  const sourceID = data.baseInfo?.userID
+  if (!sourceID) {
+    return undefined
+  }
+
+  return {
+    sourceID,
+    ...(data.groupMemberInfo?.groupID
+      ? { groupID: data.groupMemberInfo.groupID }
+      : {}),
+  }
+}
+
 const useStore = defineStore('contact', {
   state: (): StateType => ({
     friendList: [],
@@ -300,9 +314,17 @@ const useStore = defineStore('contact', {
         },
       }
     },
-    setUserCardData(data: UserCardData) {
+    setUserCardData(data: UserCardData, navigate = true) {
       this.userCardData = { ...data }
-      router.push('userCard')
+      if (!navigate) return
+
+      const query = getUserCardRouteQuery(data)
+      if (!query) return
+
+      router.push({
+        path: '/userCard',
+        query,
+      })
     },
     updateUserCardMemberInfo(item: GroupMemberItem) {
       if (
@@ -312,7 +334,7 @@ const useStore = defineStore('contact', {
         return
       this.userCardData.groupMemberInfo = { ...item }
     },
-    async getUserCardData(sourceID: string, groupID?: string) {
+    async resolveUserCardData(sourceID: string, groupID?: string) {
       const [
         friendRes,
         userRes,
@@ -349,15 +371,43 @@ const useStore = defineStore('contact', {
           error: i18nt('messageTip.getUserInfoFailed'),
           message: i18nt('messageTip.getUserInfoFailed'),
         })
-        return
+        return undefined
       }
 
-      this.userCardData = {
+      return {
         baseInfo,
         friendInfo,
         groupMemberInfo,
       }
-      router.push('userCard')
+    },
+    async hydrateUserCardData(sourceID: string, groupID?: string) {
+      const data = await this.resolveUserCardData(sourceID, groupID)
+      if (!data) {
+        return false
+      }
+
+      this.setUserCardData(data, false)
+      return true
+    },
+    async getUserCardData(sourceID: string, groupID?: string, navigate = true) {
+      const data = await this.resolveUserCardData(sourceID, groupID)
+      if (!data) {
+        return false
+      }
+
+      this.setUserCardData(data, false)
+      if (!navigate) {
+        return true
+      }
+
+      const query = getUserCardRouteQuery(data)
+      if (query) {
+        router.push({
+          path: '/userCard',
+          query,
+        })
+      }
+      return true
     },
     clearContactStore() {
       this.friendList = []

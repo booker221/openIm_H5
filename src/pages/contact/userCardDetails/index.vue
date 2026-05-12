@@ -40,6 +40,8 @@ import useContactStore from '@/store/modules/contact'
 
 const { t } = useI18n()
 const contactStore = useContactStore()
+const router = useRouter()
+const route = useRoute()
 
 const comptGenderStr = computed(() => {
   if (contactStore.storeUserCardData.baseInfo?.gender === 1) {
@@ -50,9 +52,44 @@ const comptGenderStr = computed(() => {
   }
   return t('private')
 })
-const birthStr = contactStore.storeUserCardData.baseInfo?.birth
-  ? dayjs(contactStore.storeUserCardData.baseInfo?.birth).format('YYYY-MM-DD')
-  : '-'
+const birthStr = computed(() =>
+  contactStore.storeUserCardData.baseInfo?.birth
+    ? dayjs(contactStore.storeUserCardData.baseInfo?.birth).format('YYYY-MM-DD')
+    : '-',
+)
+
+const ensureUserCardData = async () => {
+  const sourceID =
+    (typeof route.query.sourceID === 'string' ? route.query.sourceID : '') ||
+    contactStore.storeUserCardData.baseInfo?.userID
+  const groupID =
+    (typeof route.query.groupID === 'string' ? route.query.groupID : '') ||
+    contactStore.storeUserCardData.groupMemberInfo?.groupID
+
+  if (!sourceID) {
+    router.replace('/conversation')
+    return
+  }
+
+  const needHydrate =
+    contactStore.storeUserCardData.baseInfo?.userID !== sourceID ||
+    (groupID || contactStore.storeUserCardData.groupMemberInfo?.groupID
+      ? contactStore.storeUserCardData.groupMemberInfo?.groupID !== groupID
+      : false)
+
+  if (!needHydrate) {
+    return
+  }
+
+  const restored = await contactStore.hydrateUserCardData(sourceID, groupID)
+  if (!restored) {
+    router.replace('/conversation')
+  }
+}
+
+onMounted(() => {
+  ensureUserCardData()
+})
 </script>
 
 <style lang="scss" scoped></style>

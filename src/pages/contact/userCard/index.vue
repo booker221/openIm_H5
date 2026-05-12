@@ -55,7 +55,7 @@
         class="mb-2"
         :lable="$t('userInfo')"
         arrow
-        @click="router.push('/userCardDetails')"
+        @click="toUserCardDetails"
       />
     </div>
 
@@ -110,6 +110,7 @@ const contactStore = useContactStore()
 const userStore = useUserStore()
 const appConfigStore = useAppConfigStore()
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const { inviteRtc } = useInviteRtc()
 
@@ -146,6 +147,27 @@ const showUserInfoEntry = computed(
     isFriendUser.value ||
     !!contactStore.storeUserCardData.groupMemberInfo,
 )
+const routeSourceID = computed(() =>
+  typeof route.query.sourceID === 'string' ? route.query.sourceID : '',
+)
+const routeGroupID = computed(() =>
+  typeof route.query.groupID === 'string' ? route.query.groupID : '',
+)
+const currentRouteQuery = computed(() => {
+  const sourceID = routeSourceID.value || contactStore.storeUserCardData.baseInfo?.userID
+
+  if (!sourceID) {
+    return {}
+  }
+
+  const groupID =
+    routeGroupID.value || contactStore.storeUserCardData.groupMemberInfo?.groupID
+
+  return {
+    sourceID,
+    ...(groupID ? { groupID } : {}),
+  }
+})
 
 // events
 const toConversation = () => {
@@ -162,7 +184,17 @@ const toCall = () => {
 }
 
 const toFriendSetting = () => {
-  router.push('/userCardSetting')
+  router.push({
+    path: '/userCardSetting',
+    query: currentRouteQuery.value,
+  })
+}
+
+const toUserCardDetails = () => {
+  router.push({
+    path: '/userCardDetails',
+    query: currentRouteQuery.value,
+  })
 }
 
 const toAddFriend = () => {
@@ -193,6 +225,35 @@ const avatarPreview = () => {
     })
   }
 }
+
+const ensureUserCardData = async () => {
+  const sourceID = routeSourceID.value || contactStore.storeUserCardData.baseInfo?.userID
+  const groupID = routeGroupID.value || contactStore.storeUserCardData.groupMemberInfo?.groupID
+
+  if (!sourceID) {
+    router.replace('/conversation')
+    return
+  }
+
+  const needHydrate =
+    contactStore.storeUserCardData.baseInfo?.userID !== sourceID ||
+    (groupID || contactStore.storeUserCardData.groupMemberInfo?.groupID
+      ? contactStore.storeUserCardData.groupMemberInfo?.groupID !== groupID
+      : false)
+
+  if (!needHydrate) {
+    return
+  }
+
+  const restored = await contactStore.hydrateUserCardData(sourceID, groupID)
+  if (!restored) {
+    router.replace('/conversation')
+  }
+}
+
+onMounted(() => {
+  ensureUserCardData()
+})
 </script>
 
 <style lang="scss" scoped></style>
