@@ -81,6 +81,13 @@
         {{ $t('sendMessage') }}
       </van-button>
     </div>
+
+    <van-action-sheet
+      v-model:show="callActionVisible"
+      teleport="body"
+      :actions="callActions"
+      @select="onCallActionSelect"
+    />
   </div>
 </template>
 
@@ -102,8 +109,9 @@ import useAppConfigStore from '@/store/modules/appConfig'
 import { BusinessAllowType } from '@/api/data'
 import useConversationToggle from '@/hooks/useConversationToggle'
 import { useInviteRtc } from '@/hooks/useInviteRtc'
-import { showImagePreview } from 'vant'
+import { showImagePreview, type ActionSheetAction } from 'vant'
 import { ChatFooterActionType } from '@/constants/action'
+import type { ParticipantInfo } from '@/pages/rtc/data'
 
 const { toSpecifiedConversation } = useConversationToggle()
 const contactStore = useContactStore()
@@ -113,6 +121,10 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const { inviteRtc } = useInviteRtc()
+
+type CallAction = ActionSheetAction & {
+  type: ChatFooterActionType.VoiceCall | ChatFooterActionType.VideoCall
+}
 
 const isSelf = computed(
   () => contactStore.storeUserCardData.baseInfo?.userID === userStore.selfInfo.userID,
@@ -168,6 +180,17 @@ const currentRouteQuery = computed(() => {
     ...(groupID ? { groupID } : {}),
   }
 })
+const callActionVisible = ref(false)
+const callActions = computed<CallAction[]>(() => [
+  {
+    name: t('rtc.voice'),
+    type: ChatFooterActionType.VoiceCall,
+  },
+  {
+    name: t('rtc.video'),
+    type: ChatFooterActionType.VideoCall,
+  },
+])
 
 // events
 const toConversation = () => {
@@ -178,9 +201,37 @@ const toConversation = () => {
 }
 
 const toCall = () => {
-  inviteRtc(ChatFooterActionType.VoiceCall, [
-    contactStore.storeUserCardData.baseInfo?.userID!,
-  ])
+  callActionVisible.value = true
+}
+
+const getCallParticipant = (): ParticipantInfo | undefined => {
+  const baseInfo = contactStore.storeUserCardData.baseInfo
+
+  if (!baseInfo?.userID) {
+    return undefined
+  }
+
+  return {
+    userInfo: {
+      nickname: baseInfo.nickname || '',
+      userID: baseInfo.userID,
+      faceURL: baseInfo.faceURL || '',
+      ex: '',
+    },
+  }
+}
+
+const onCallActionSelect = ({ type }: CallAction) => {
+  callActionVisible.value = false
+
+  const participant = getCallParticipant()
+  if (!participant) {
+    return
+  }
+
+  inviteRtc(type, [participant.userInfo.userID], {
+    participant,
+  })
 }
 
 const toFriendSetting = () => {
