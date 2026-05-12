@@ -1,5 +1,5 @@
 <template>
-  <div class="header px-[22px] py-4 mt-[10px]">
+  <div class="header mt-[10px] border-b border-[#E8EAEF] px-[22px] py-4">
     <div class="flex items-center">
       <Avatar
         :size="48"
@@ -66,33 +66,6 @@
           </svg>
         </button>
 
-        <button
-          type="button"
-          class="header_action_btn"
-          @click="router.push('/globalSearch')"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle
-              cx="11"
-              cy="11"
-              r="6.5"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-            />
-            <path
-              d="M16 16l4 4"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-            />
-          </svg>
-        </button>
-
         <van-popover
           :show-arrow="false"
           v-model:show="showPopover"
@@ -106,6 +79,34 @@
         </van-popover>
       </div>
     </div>
+
+    <button
+      type="button"
+      class="search_entry"
+      @click="router.push('/globalSearch')"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle
+          cx="11"
+          cy="11"
+          r="6.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+        />
+        <path
+          d="M16 16l4 4"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+        />
+      </svg>
+      <span>{{ $t('search') }}</span>
+    </button>
 
     <van-popup
       v-model:show="showLinePopup"
@@ -429,6 +430,27 @@ const selectMenu = async (action: ConversationPopoverAction) => {
 .header_action_btn svg {
   width: 24px;
   height: 24px;
+}
+
+.search_entry {
+  width: 100%;
+  height: 36px;
+  margin-top: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #8e9ab0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.search_entry svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .line_popup {
