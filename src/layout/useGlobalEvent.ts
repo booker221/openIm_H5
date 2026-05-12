@@ -64,6 +64,8 @@ export function useGlobalEvent() {
     // message
     IMSDK.on(CbEvents.OnRecvNewMessage, newMessageHandler)
     IMSDK.on(CbEvents.OnRecvNewMessages, newMessageHandler)
+    IMSDK.on(CbEvents.OnRecvMessageRevoked, revokedMessageHandler)
+    IMSDK.on(CbEvents.OnNewRecvMessageRevoked, revokedMessageHandler)
     // conversation
     IMSDK.on(CbEvents.OnConversationChanged, conversationChnageHandler)
     IMSDK.on(CbEvents.OnNewConversation, newConversationHandler)
@@ -162,20 +164,40 @@ export function useGlobalEvent() {
   }
   const handleNewMessage = (newServerMsg: ExMessageItem) => {
     if (inCurrentConversation(newServerMsg)) {
+      if (newServerMsg.contentType === MessageType.RevokeMessage) {
+        updateRevokedMessageFromTip(newServerMsg)
+        return
+      }
+
       if (newServerMsg.contentType === MessageType.CustomMessage) {
         const customData = JSON.parse(newServerMsg.customElem!.data)
         if (200 <= customData.customType && customData.customType <= 204) {
           return
         }
       }
-      if (
-        newServerMsg.contentType !== MessageType.TypingMessage &&
-        newServerMsg.contentType !== MessageType.RevokeMessage
-      ) {
+      if (newServerMsg.contentType !== MessageType.TypingMessage) {
         newServerMsg.isAppend = true
         messageStore.pushNewMessage(newServerMsg)
         emitter.emit('CHAT_MAIN_SCROLL_TO_BOTTOM', true)
       }
+    }
+  }
+  const revokedMessageHandler = ({ data }: WSEvent<RevokedInfo>) => {
+    messageStore.markMessageRevoked(data)
+  }
+  const updateRevokedMessageFromTip = (message: MessageItem) => {
+    if (!message.notificationElem?.detail) {
+      return
+    }
+
+    try {
+      const detail = JSON.parse(message.notificationElem.detail) as RevokedInfo
+      if (!detail.clientMsgID) {
+        return
+      }
+      messageStore.markMessageRevoked(detail)
+    } catch (error) {
+      return
     }
   }
   const inCurrentConversation = (newServerMsg: MessageItem) => {

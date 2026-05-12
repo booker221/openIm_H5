@@ -1,6 +1,9 @@
 import { MessageType } from '@openim/wasm-client-sdk'
 import type { MessageItem } from '@openim/wasm-client-sdk/lib/types/entity'
-import { parseCallCustomMessage } from '@/utils/customMessage'
+import {
+  parseCallCustomMessage,
+  parseReplyCustomMessage,
+} from '@/utils/customMessage'
 
 export const getMessagePreviewText = (message: Partial<MessageItem>) => {
   switch (message.contentType) {
@@ -19,7 +22,11 @@ export const getMessagePreviewText = (message: Partial<MessageItem>) => {
     case MessageType.LocationMessage:
       return '[位置]'
     case MessageType.CustomMessage:
-      return parseCallCustomMessage(message)?.content ?? '[消息]'
+      return (
+        parseReplyCustomMessage(message)?.content ??
+        parseCallCustomMessage(message)?.content ??
+        '[消息]'
+      )
     case MessageType.CardMessage:
       return '[名片]'
     case MessageType.QuoteMessage:
@@ -97,6 +104,16 @@ export const buildFavoritePayload = (message: MessageItem) => {
       payload.title = message.senderNickname ?? ''
       payload.description = '引用消息'
       return payload
+    case MessageType.CustomMessage:
+      const replyMessage = parseReplyCustomMessage(message)
+      if (replyMessage) {
+        payload.type = 1
+        payload.content = replyMessage.content
+        payload.title = message.senderNickname ?? ''
+        payload.description = '回复消息'
+        return payload
+      }
+      return null
     default:
       return null
   }

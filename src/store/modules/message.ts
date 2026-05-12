@@ -1,7 +1,11 @@
 import { feedbackToast } from '@utils/common'
 import { IMSDK } from '@/utils/imCommon'
 import { ensureIMLogin } from '@/utils/imLogin'
-import type { MessageItem } from '@openim/wasm-client-sdk/lib/types/entity'
+import { MessageType } from '@openim/wasm-client-sdk'
+import type {
+  MessageItem,
+  RevokedInfo,
+} from '@openim/wasm-client-sdk/lib/types/entity'
 import { GetAdvancedHistoryMsgParams } from '@openim/wasm-client-sdk/lib/types/params'
 import { defineStore } from 'pinia'
 import store from '../index'
@@ -57,6 +61,52 @@ const mergeUniqueMessages = (messageList: ExMessageItem[]) => {
   return Array.from(messageMap.values())
 }
 
+const buildRevokedMessage = (
+  sourceMessage: ExMessageItem,
+  revokedInfo: Partial<RevokedInfo> & Pick<RevokedInfo, 'clientMsgID'>,
+): ExMessageItem => {
+  const detail = {
+    revokerID: revokedInfo.revokerID ?? sourceMessage.sendID,
+    revokerRole: revokedInfo.revokerRole ?? 0,
+    clientMsgID: revokedInfo.clientMsgID,
+    revokerNickname:
+      revokedInfo.revokerNickname ?? sourceMessage.senderNickname ?? '',
+    revokeTime: revokedInfo.revokeTime ?? Date.now(),
+    sourceMessageSendTime:
+      revokedInfo.sourceMessageSendTime ?? sourceMessage.sendTime ?? 0,
+    sourceMessageSendID: revokedInfo.sourceMessageSendID ?? sourceMessage.sendID,
+    sourceMessageSenderNickname:
+      revokedInfo.sourceMessageSenderNickname ??
+      sourceMessage.senderNickname ??
+      '',
+    sessionType: revokedInfo.sessionType ?? sourceMessage.sessionType ?? 0,
+    seq: revokedInfo.seq ?? sourceMessage.seq ?? 0,
+    ex: revokedInfo.ex ?? sourceMessage.ex ?? '',
+  }
+
+  return {
+    ...sourceMessage,
+    contentType: MessageType.RevokeMessage,
+    notificationElem: {
+      detail: JSON.stringify(detail),
+    },
+    textElem: undefined,
+    cardElem: undefined,
+    pictureElem: undefined,
+    soundElem: undefined,
+    videoElem: undefined,
+    fileElem: undefined,
+    mergeElem: undefined,
+    atTextElem: undefined,
+    faceElem: undefined,
+    locationElem: undefined,
+    customElem: undefined,
+    quoteElem: undefined,
+    advancedTextElem: undefined,
+    typingElem: undefined,
+  }
+}
+
 const useStore = defineStore('message', {
   state: (): StateType => ({
     historyMessageList: [],
@@ -96,7 +146,6 @@ const useStore = defineStore('message', {
           ...(isFirstPage ? [] : this.historyMessageList),
         ])
         this.hasMore = tmpData.messageList.length !== 0
-        // console.log(this.historyMessageList);
         return {
           messageIDList: tmpData.messageList.map(
             (message: MessageItem) => message.clientMsgID,
@@ -134,6 +183,30 @@ const useStore = defineStore('message', {
           ...this.historyMessageList[idx],
           ...message,
         }
+      }
+    },
+    markMessageRevoked(
+      revokedInfo: Partial<RevokedInfo> & Pick<RevokedInfo, 'clientMsgID'>,
+      fallbackMessage?: ExMessageItem,
+    ) {
+      const idx = this.historyMessageList.findIndex(
+        (msg) => msg.clientMsgID === revokedInfo.clientMsgID,
+      )
+      const sourceMessage =
+        idx !== -1 ? this.historyMessageList[idx] : fallbackMessage
+
+      if (!sourceMessage) {
+        return
+      }
+
+      const revokedMessage = buildRevokedMessage(sourceMessage, revokedInfo)
+
+      if (idx !== -1) {
+        this.historyMessageList[idx] = revokedMessage
+      }
+
+      if (this.quoteMessage?.clientMsgID === revokedInfo.clientMsgID) {
+        this.quoteMessage = undefined
       }
     },
     setQuoteMessage(message?: ExMessageItem) {

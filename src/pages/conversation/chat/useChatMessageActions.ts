@@ -152,6 +152,22 @@ export default function useChatMessageActions() {
         conversationID: getCurrentConversationID(),
         clientMsgID: message.clientMsgID ?? '',
       })
+      messageStore.markMessageRevoked(
+        {
+          clientMsgID: message.clientMsgID ?? '',
+          revokerID: userStore.storeSelfInfo.userID,
+          revokerNickname: userStore.storeSelfInfo.nickname,
+          revokerRole: conversationStore.storeCurrentMemberInGroup?.roleLevel ?? 0,
+          revokeTime: Date.now(),
+          sourceMessageSendID: message.sendID,
+          sourceMessageSendTime: message.sendTime,
+          sourceMessageSenderNickname: message.senderNickname,
+          sessionType: message.sessionType,
+          seq: message.seq,
+          ex: message.ex ?? '',
+        },
+        message,
+      )
       feedbackToast({ message: t('messageTip.revokeSuccess') })
     } catch (error) {
       if (error === 'cancel') return

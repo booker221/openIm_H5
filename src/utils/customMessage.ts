@@ -28,6 +28,14 @@ export type ParsedCallCustomMessage = {
   viewType: number
 }
 
+export type ParsedReplyCustomMessage = {
+  content: string
+  quoteMessageID: string
+  quotePreview: string
+  quoteSenderNickname: string
+  viewType: number
+}
+
 export const parseCustomMessagePayload = (
   message: Partial<MessageItem>,
 ): CustomMessagePayload | null => {
@@ -113,6 +121,33 @@ export const parseCallCustomMessage = (
   }
 }
 
+export const parseReplyCustomMessage = (
+  message: Partial<MessageItem>,
+): ParsedReplyCustomMessage | null => {
+  const payload = parseCustomMessagePayload(message)
+
+  if (payload?.customType !== CustomMessageType.Reply) {
+    return null
+  }
+
+  const content = String(payload.data?.content ?? '')
+  const quoteMessageID = String(payload.data?.quoteMessageID ?? '')
+  const quotePreview = String(payload.data?.quotePreview ?? '')
+  const quoteSenderNickname = String(payload.data?.quoteSenderNickname ?? '')
+
+  if (!content) {
+    return null
+  }
+
+  return {
+    content,
+    quoteMessageID,
+    quotePreview,
+    quoteSenderNickname,
+    viewType: CustomMessageType.Reply,
+  }
+}
+
 export const buildCallCustomMessageData = ({
   duration,
   state,
@@ -128,5 +163,26 @@ export const buildCallCustomMessageData = ({
       duration,
       state,
       type,
+    },
+  })
+
+export const buildReplyCustomMessageData = ({
+  content,
+  quoteMessageID,
+  quotePreview,
+  quoteSenderNickname,
+}: {
+  content: string
+  quoteMessageID: string
+  quotePreview: string
+  quoteSenderNickname: string
+}) =>
+  JSON.stringify({
+    customType: CustomMessageType.Reply,
+    data: {
+      content,
+      quoteMessageID,
+      quotePreview,
+      quoteSenderNickname,
     },
   })
