@@ -2,7 +2,7 @@
   <van-swipe-cell>
     <div
       @click="clickConversation"
-      class="flex items-center py-[10px] px-[22px] active:bg-[#F3F3F3]"
+      class="relative flex items-center px-[22px] py-[10px] active:bg-[#F3F3F3] after:absolute after:bottom-0 after:left-[82px] after:right-[22px] after:border-b after:border-[#E8EAEF] after:content-['']"
     >
       <div class="pinned" v-if="source.isPinned"></div>
       <Avatar

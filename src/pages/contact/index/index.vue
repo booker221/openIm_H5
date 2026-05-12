@@ -1,5 +1,5 @@
 <template>
-  <div class="page_container">
+  <div class="page_container mt-[20px] mb-[20px]">
     <ContactHeader />
     <ContactMenuList />
     <!-- <ContactFrequentList /> -->
