@@ -21,21 +21,27 @@
             @focus="onFocusUpdate(true)" @blur="onFocusUpdate(false)" v-model:input="messageContent"
             :placeholder="$t('placeholder.pleaseInput')" @trigger-at="() => { }" />
         </div>
+        <img @click="clickEmojiBtn" class="ml-3 h-[26px] min-w-[26px]" :src="showEmojiBar ? keyboard : emoji"
+          alt="emoji" />
         <img v-show="!messageContent" @click="clickAddBtn" class="ml-3 h-[26px] min-w-[26px]" :src="add" alt="" />
         <img v-show="messageContent" @click="switchTextMessage" class="ml-3 h-[26px] min-w-[26px]" :src="send"
           alt="send" />
       </div>
     </div>
+    <EmojiPickerPanel v-show="showEmojiBar" :visible="showEmojiBar" @select="handleSelectEmoji" />
     <ChatFooterAction v-show="showActionBar" @closeActionBar="closeActionBar" @getFile="getFile" />
   </div>
 </template>
 
 <script setup lang="ts">
 import add from '@/assets/images/chatFooter/add.png'
+import emoji from '@/assets/images/chatFooter/emoji.png'
+import keyboard from '@/assets/images/chatFooter/keyboard.png'
 import send from '@/assets/images/chatFooter/send.png'
 
 import CustomEdit from '@/components/CustomEdit/index.vue'
 import ChatFooterAction from './ChatFooterAction.vue'
+import EmojiPickerPanel from './EmojiPickerPanel.vue'
 import {
   GroupMemberRole,
   GroupStatus,
@@ -54,9 +60,6 @@ import useCreateNomalMessage from './useCreateNomalMessage'
 import useCreateFileMessage from './useCreateFileMessage'
 import { getMessagePreviewText } from '../MessageItem/messageUtils'
 
-const emit = defineEmits([])
-defineProps()
-
 const { t } = useI18n()
 const conversationStore = useConversationStore()
 const contactStore = useContactStore()
@@ -66,6 +69,8 @@ const { createFileMessage } = useCreateFileMessage()
 // message
 const messageContent = ref('')
 const inputRef = ref()
+const showActionBar = ref(false)
+const showEmojiBar = ref(false)
 
 const { switchNomalMessage } = useCreateNomalMessage({
   messageContent,
@@ -109,6 +114,11 @@ const getPlaceholder = computed(() => {
 })
 
 const onFocusUpdate = (isFocus: boolean) => {
+  if (isFocus) {
+    showActionBar.value = false
+    showEmojiBar.value = false
+  }
+
   if (!checkIsSafari()) {
     return
   }
@@ -133,10 +143,6 @@ const resetState = () => {
 }
 
 
-// action bar
-const showActionBar = ref(false)
-const showEmojiBar = ref(false)
-
 const closeActionBar = () => {
   showActionBar.value = false
 }
@@ -145,6 +151,23 @@ const clickAddBtn = () => {
     showEmojiBar.value = false
   }
   showActionBar.value = !showActionBar.value
+}
+
+const clickEmojiBtn = async () => {
+  showActionBar.value = false
+  showEmojiBar.value = !showEmojiBar.value
+
+  if (showEmojiBar.value) {
+    inputRef.value?.inputRef?.blur()
+    return
+  }
+
+  await nextTick()
+  inputRef.value?.focusAtEnd?.()
+}
+
+const handleSelectEmoji = (emojiText: string) => {
+  inputRef.value?.insertAtCursor?.([document.createTextNode(emojiText)])
 }
 
 const getFile = async (
@@ -172,14 +195,15 @@ const getFile = async (
 
 onMounted(() => {
   if (!inputRef.value) return
-  inputRef.value.inputRef.focus()
+  inputRef.value.focusAtEnd?.()
 })
 
 onActivated(() => {
   if (!inputRef.value) return
   resetState()
-  inputRef.value.clear()
-  inputRef.value.inputRef.focus()
+  showActionBar.value = false
+  showEmojiBar.value = false
+  inputRef.value.focusAtEnd?.()
 })
 
 watch(
@@ -187,7 +211,7 @@ watch(
   async (newVal) => {
     if (!newVal) return
     await nextTick()
-    inputRef.value?.inputRef?.focus()
+    inputRef.value?.focusAtEnd?.()
   },
 )
 </script>

@@ -27,7 +27,7 @@ const emit = defineEmits(['update:input', 'change', 'triggerAt'])
 
 const inputRef = ref<HTMLDivElement>()
 let latestHtml = ''
-let cursorPos: Range
+let cursorPos: Range | undefined
 
 onUpdated(() => {
   latestHtml = input.value
@@ -44,12 +44,35 @@ const emitChange = () => {
 
 const clear = () => {
   inputRef.value!.innerHTML = ''
+  latestHtml = ''
+}
+
+const buildRangeAtEnd = () => {
+  const range = document.createRange()
+  range.selectNodeContents(inputRef.value!)
+  range.collapse(false)
+  return range
+}
+
+const focusAtEnd = () => {
+  if (!inputRef.value) return
+
+  inputRef.value.focus()
+  const selection = window.getSelection()
+  const range = buildRangeAtEnd()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+  cursorPos = range
 }
 
 const insertAtCursor = (nodes: Node[]) => {
-  if (!cursorPos) return
+  if (!inputRef.value) return
+
   const selection = window.getSelection()
-  const range = cursorPos.cloneRange()
+  const range = cursorPos?.cloneRange() ?? buildRangeAtEnd()
+
+  selection?.removeAllRanges()
+  selection?.addRange(range)
 
   range.deleteContents()
   nodes.forEach((node) => {
@@ -57,8 +80,9 @@ const insertAtCursor = (nodes: Node[]) => {
     range.setStartAfter(node)
   })
   range.collapse(false)
-  selection!.removeAllRanges()
-  selection!.addRange(range)
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+  cursorPos = range.cloneRange()
   emitChange()
 }
 
@@ -98,6 +122,7 @@ defineExpose({
   insertAtCursor,
   deletePreviousChar,
   clear,
+  focusAtEnd,
 })
 </script>
 

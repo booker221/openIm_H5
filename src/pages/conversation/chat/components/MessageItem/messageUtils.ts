@@ -21,6 +21,8 @@ export const getMessagePreviewText = (message: Partial<MessageItem>) => {
       return '[文件]'
     case MessageType.LocationMessage:
       return '[位置]'
+    case MessageType.FaceMessage:
+      return '[表情]'
     case MessageType.CustomMessage:
       return (
         parseReplyCustomMessage(message)?.content ??
