@@ -44,6 +44,24 @@ export default function useCreateFileMessage() {
     ).data
   }
 
+  const getVoiceMessage = async (
+    file: File,
+    duration: number,
+  ): Promise<MessageItem> => {
+    const localUrl = URL.createObjectURL(file)
+    return (
+      await IMSDK.createSoundMessageByFile({
+        uuid: uuidV4(),
+        soundPath: localUrl,
+        sourceUrl: localUrl,
+        dataSize: file.size,
+        duration,
+        soundType: file.type || 'audio/wav',
+        file,
+      })
+    ).data
+  }
+
   const createFileMessage = async (file: File, messageType: MessageType) => {
     switch (messageType) {
       case MessageType.PictureMessage:
@@ -63,5 +81,6 @@ export default function useCreateFileMessage() {
 
   return {
     createFileMessage,
+    getVoiceMessage,
   }
 }

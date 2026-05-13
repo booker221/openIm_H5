@@ -52,6 +52,7 @@ import FileMessageRenderer from './FileMessageRenderer.vue'
 import CardMessageRenderer from './CardMessageRenderer.vue'
 import CustomMessageRenderer from './CustomMessageRenderer.vue'
 import FaceMessageRenderer from './FaceMessageRenderer.vue'
+import VoiceMessageRenderer from './VoiceMessageRenderer.vue'
 import { MessageType, SessionType } from '@openim/wasm-client-sdk'
 import useUserStore from '@/store/modules/user'
 import { ExedMessageItem } from './data'
@@ -93,6 +94,8 @@ const getRenderComp = computed(() => {
       return MediaMessageRenderer
     case MessageType.FileMessage:
       return FileMessageRenderer
+    case MessageType.VoiceMessage:
+      return VoiceMessageRenderer
     case MessageType.FaceMessage:
       return FaceMessageRenderer
     case MessageType.CustomMessage:

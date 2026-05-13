@@ -16,15 +16,27 @@
         <van-icon class="ml-2 mt-0.5 text-[#8E9AB0]" name="cross" @click="messageStore.clearQuoteMessage()" />
       </div>
       <div id="chat_footer" class="flex items-center">
+        <img
+          @click="clickVoiceBtn"
+          class="mr-3 h-[26px] min-w-[26px]"
+          :src="showVoiceMode ? keyboard : audio"
+          alt="voice"
+        />
         <div class="flex-grow">
-          <CustomEdit class="bg-[#fff]" ref="inputRef"
+          <ChatVoiceRecorder
+            v-if="showVoiceMode"
+            @send="sendVoiceMessage"
+            @error="showVoiceError"
+            @recording-change="onVoiceRecordingChange"
+          />
+          <CustomEdit v-else class="bg-[#fff]" ref="inputRef"
             @focus="onFocusUpdate(true)" @blur="onFocusUpdate(false)" v-model:input="messageContent"
             :placeholder="$t('placeholder.pleaseInput')" @trigger-at="() => { }" />
         </div>
-        <img @click="clickEmojiBtn" class="ml-3 h-[26px] min-w-[26px]" :src="showEmojiBar ? keyboard : emoji"
+        <img v-if="!showVoiceMode" @click="clickEmojiBtn" class="ml-3 h-[26px] min-w-[26px]" :src="showEmojiBar ? keyboard : emoji"
           alt="emoji" />
-        <img v-show="!messageContent" @click="clickAddBtn" class="ml-3 h-[26px] min-w-[26px]" :src="add" alt="" />
-        <img v-show="messageContent" @click="switchTextMessage" class="ml-3 h-[26px] min-w-[26px]" :src="send"
+        <img v-show="!messageContent || showVoiceMode" @click="clickAddBtn" class="ml-3 h-[26px] min-w-[26px]" :src="add" alt="" />
+        <img v-show="messageContent && !showVoiceMode" @click="switchTextMessage" class="ml-3 h-[26px] min-w-[26px]" :src="send"
           alt="send" />
       </div>
     </div>
@@ -35,12 +47,14 @@
 
 <script setup lang="ts">
 import add from '@/assets/images/chatFooter/add.png'
+import audio from '@/assets/images/chatFooter/audio.png'
 import emoji from '@/assets/images/chatFooter/emoji.png'
 import keyboard from '@/assets/images/chatFooter/keyboard.png'
 import send from '@/assets/images/chatFooter/send.png'
 
 import CustomEdit from '@/components/CustomEdit/index.vue'
 import ChatFooterAction from './ChatFooterAction.vue'
+import ChatVoiceRecorder from './ChatVoiceRecorder.vue'
 import EmojiPickerPanel from './EmojiPickerPanel.vue'
 import {
   GroupMemberRole,
@@ -64,13 +78,15 @@ const { t } = useI18n()
 const conversationStore = useConversationStore()
 const contactStore = useContactStore()
 const messageStore = useMessageStore()
-const { createFileMessage } = useCreateFileMessage()
+const { createFileMessage, getVoiceMessage } = useCreateFileMessage()
 
 // message
 const messageContent = ref('')
 const inputRef = ref()
 const showActionBar = ref(false)
 const showEmojiBar = ref(false)
+const showVoiceMode = ref(false)
+const isVoiceRecording = ref(false)
 
 const { switchNomalMessage } = useCreateNomalMessage({
   messageContent,
@@ -117,6 +133,7 @@ const onFocusUpdate = (isFocus: boolean) => {
   if (isFocus) {
     showActionBar.value = false
     showEmojiBar.value = false
+    showVoiceMode.value = false
   }
 
   if (!checkIsSafari()) {
@@ -150,11 +167,13 @@ const clickAddBtn = () => {
   if (showEmojiBar.value) {
     showEmojiBar.value = false
   }
+  showVoiceMode.value = false
   showActionBar.value = !showActionBar.value
 }
 
 const clickEmojiBtn = async () => {
   showActionBar.value = false
+  showVoiceMode.value = false
   showEmojiBar.value = !showEmojiBar.value
 
   if (showEmojiBar.value) {
@@ -168,6 +187,47 @@ const clickEmojiBtn = async () => {
 
 const handleSelectEmoji = (emojiText: string) => {
   inputRef.value?.insertAtCursor?.([document.createTextNode(emojiText)])
+}
+
+const clickVoiceBtn = async () => {
+  if (isVoiceRecording.value) {
+    return
+  }
+  showActionBar.value = false
+  showEmojiBar.value = false
+  showVoiceMode.value = !showVoiceMode.value
+
+  if (showVoiceMode.value) {
+    inputRef.value?.inputRef?.blur()
+    return
+  }
+
+  await nextTick()
+  inputRef.value?.focusAtEnd?.()
+}
+
+const onVoiceRecordingChange = (recording: boolean) => {
+  isVoiceRecording.value = recording
+}
+
+const showVoiceError = (message: string) => {
+  feedbackToast({
+    error: new Error(message),
+    message,
+  })
+}
+
+const sendVoiceMessage = async (file: File, duration: number) => {
+  try {
+    const message = await getVoiceMessage(file, duration)
+    sendMessage({ message })
+    messageStore.clearQuoteMessage()
+  } catch (error: any) {
+    feedbackToast({
+      error,
+      message: error?.errMsg || error?.message || t('messageTip.sendFailed'),
+    })
+  }
 }
 
 const getFile = async (
@@ -198,12 +258,14 @@ onMounted(() => {
   inputRef.value.focusAtEnd?.()
 })
 
-onActivated(() => {
-  if (!inputRef.value) return
-  resetState()
+onActivated(async () => {
   showActionBar.value = false
   showEmojiBar.value = false
-  inputRef.value.focusAtEnd?.()
+  showVoiceMode.value = false
+  messageContent.value = ''
+  await nextTick()
+  inputRef.value?.clear()
+  inputRef.value?.focusAtEnd?.()
 })
 
 watch(

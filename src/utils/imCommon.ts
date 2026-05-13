@@ -359,13 +359,14 @@ export const getCleanText = (text: string) => {
 export const formatMessageByType = (message: MessageItem): string => {
   const userStore = useUserStore()
   const selfUserID = userStore.storeSelfInfo.userID
+  const contentType = Number(message.contentType)
 
   const isSelf = (id: string) => id === userStore.storeSelfInfo.userID
   const getName = (user: PublicUserItem) => {
     return user.userID === selfUserID ? t('you') : user.nickname
   }
 
-  switch (message.contentType) {
+  switch (contentType) {
     case MessageType.TextMessage:
       return message.textElem?.content!
     case MessageType.AtTextMessage:
@@ -387,7 +388,9 @@ export const formatMessageByType = (message: MessageItem): string => {
     case MessageType.VideoMessage:
       return t('messageDescription.videoMessage')
     case MessageType.VoiceMessage:
-      return t('messageDescription.voiceMessage')
+      return message.soundElem?.duration
+        ? `${t('messageDescription.voiceMessage')} ${message.soundElem.duration}''`
+        : t('messageDescription.voiceMessage')
     case MessageType.LocationMessage:
       const locationInfo = JSON.parse(message.locationElem?.description!)
       return t('messageDescription.locationMessage', {
@@ -614,11 +617,12 @@ export const getFrequentContacts = () => {
 
 export const getConversationContent = (message: MessageItem) => {
   const userStore = useUserStore()
+  const contentType = Number(message.contentType)
   if (
     !message.groupID ||
-    GroupSystemMessageTypes.includes(message.contentType) ||
+    GroupSystemMessageTypes.includes(contentType) ||
     message.sendID === userStore.storeSelfInfo.userID ||
-    message.contentType === MessageType.GroupAnnouncementUpdated
+    contentType === MessageType.GroupAnnouncementUpdated
   ) {
     return formatMessageByType(message)
   }
