@@ -1,11 +1,18 @@
 <template>
-  <div class="header mt-[10px] border-b border-[#E8EAEF] px-[22px] py-4">
+  <div class="header mt-[10px]  border-b border-[#E8EAEF] px-[22px] py-4">
     <div class="flex items-center">
-      <Avatar
-        :size="48"
-        :src="userStore.storeSelfInfo.faceURL"
-        :desc="userStore.storeSelfInfo.nickname"
-      />
+      <button
+        type="button"
+        class="self_avatar_btn"
+        :aria-label="$t('userInfo')"
+        @click="toSelfUserCard"
+      >
+        <Avatar
+          :size="48"
+          :src="userStore.storeSelfInfo.faceURL"
+          :desc="userStore.storeSelfInfo.nickname"
+        />
+      </button>
       <div class="mx-3 flex-1 text-xs">
         <div class="flex items-center">
           <div class="max-w-[30vw] truncate text-base">
@@ -67,6 +74,7 @@
         </button>
 
         <van-popover
+          class="conversation_more_popover"
           :show-arrow="false"
           v-model:show="showPopover"
           :actions="conversationTopMoreActions"
@@ -183,15 +191,13 @@ import sync_error from '@assets/images/conversation/sync_error.png'
 import add_search_user from '@assets/images/contact/add_search_user.png'
 import add_join_group from '@assets/images/contact/add_join_group.png'
 import add_create_group from '@assets/images/contact/add_create_group.png'
-import mass_msg from '@assets/images/contact/mass_msg.png'
 import scan from '@assets/images/conversation/scan.png'
-import qr_code from '@assets/images/profile/qr_code.png'
 import { PopoverAction, showToast } from 'vant'
 import useUserStore from '@/store/modules/user'
+import useContactStore from '@/store/modules/contact'
 import { IMSDK } from '@/utils/imCommon'
-import { CbEvents, GroupType, SessionType } from '@openim/wasm-client-sdk'
+import { CbEvents, GroupType } from '@openim/wasm-client-sdk'
 import useAppConfigStore from '@/store/modules/appConfig'
-import useConversationToggle from '@/hooks/useConversationToggle'
 import { applyLineHost, getAvailableHosts, getCurrentLineHost, testHostLatency } from '@/utils/lineSwitch'
 
 enum ActionEnum {
@@ -199,9 +205,6 @@ enum ActionEnum {
   AddGroup,
   CreateGroup,
   ScanQrCode,
-  MyQrCode,
-  BroadcastMessage,
-  MessageToSelf,
 }
 
 enum connectStateEnum {
@@ -217,9 +220,9 @@ type ConversationPopoverAction = PopoverAction & {
 const { t } = useI18n()
 
 const userStore = useUserStore()
+const contactStore = useContactStore()
 const appConfigStore = useAppConfigStore()
 const router = useRouter()
-const { toSpecifiedConversation } = useConversationToggle()
 
 const showPopover = ref(false)
 const showLinePopup = ref(false)
@@ -269,21 +272,6 @@ const conversationTopMoreActions = computed<ConversationPopoverAction[]>(() => {
       text: t('scanQrCode'),
       icon: scan,
       actionType: ActionEnum.ScanQrCode,
-    },
-    {
-      text: t('qrCode'),
-      icon: qr_code,
-      actionType: ActionEnum.MyQrCode,
-    },
-    {
-      text: t('broadcastMessage'),
-      icon: mass_msg,
-      actionType: ActionEnum.BroadcastMessage,
-    },
-    {
-      text: t('messageToSelf'),
-      icon: add_search_user,
-      actionType: ActionEnum.MessageToSelf,
     },
   )
 
@@ -363,6 +351,14 @@ const switchLine = async (host: string, index: number) => {
   })
 }
 
+const toSelfUserCard = () => {
+  contactStore.setUserCardData({
+    baseInfo: {
+      ...userStore.storeSelfInfo,
+    },
+  })
+}
+
 const selectMenu = async (action: ConversationPopoverAction) => {
   switch (action.actionType) {
     case ActionEnum.AddFriend:
@@ -385,18 +381,6 @@ const selectMenu = async (action: ConversationPopoverAction) => {
     case ActionEnum.ScanQrCode:
       router.push('/scanQrCode')
       break
-    case ActionEnum.MyQrCode:
-      router.push('/myQrCode')
-      break
-    case ActionEnum.BroadcastMessage:
-      router.push('/broadcastMessage')
-      break
-    case ActionEnum.MessageToSelf:
-      await toSpecifiedConversation({
-        sourceID: userStore.storeSelfInfo.userID,
-        sessionType: SessionType.Single,
-      })
-      break
     default:
       break
   }
@@ -416,6 +400,19 @@ const selectMenu = async (action: ConversationPopoverAction) => {
 
 .loading {
   animation: loading 1.5s infinite;
+}
+
+.self_avatar_btn {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.self_avatar_btn:active {
+  opacity: 0.72;
 }
 
 .header_action_btn {
@@ -451,6 +448,27 @@ const selectMenu = async (action: ConversationPopoverAction) => {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+}
+
+:global(.conversation_more_popover) {
+  --van-popover-action-width: max-content;
+}
+
+:global(.conversation_more_popover .van-popover__content) {
+  max-width: calc(100vw - 32px);
+}
+
+:global(.conversation_more_popover .van-popover__action) {
+  width: max-content;
+  min-width: 128px;
+  max-width: calc(100vw - 32px);
+  padding-right: 18px;
+  padding-left: 18px;
+}
+
+:global(.conversation_more_popover .van-popover__action-text) {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .line_popup {

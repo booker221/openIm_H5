@@ -446,21 +446,31 @@ applyRememberedPassword(loginMode.value)
 
 <style lang="scss" scoped>
 .login_page {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
   background: linear-gradient(180deg, #e6f3ff 0%, #f9fcff 44%, #ffffff 100%);
+  -webkit-overflow-scrolling: touch;
 }
 
 .login_page__content {
   display: flex;
-  min-height: 100vh;
-  max-width: 420px;
+  width: 100%;
+  max-width: 556px;
+  box-sizing: border-box;
+  min-height: 100%;
   margin: 0 auto;
+  align-items: center;
   flex-direction: column;
-  padding: 72px 28px 24px;
+  padding: 72px 30px 24px;
+  padding-bottom: calc(24px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
 .login_page__brand {
   display: flex;
+  width: 100%;
+  max-width: 496px;
   flex-direction: column;
   align-items: center;
 }
@@ -481,6 +491,8 @@ applyRememberedPassword(loginMode.value)
 .login_page__form {
   display: flex;
   flex: 1;
+  width: 100%;
+  max-width: 496px;
   flex-direction: column;
   margin-top: 68px;
 }
@@ -516,6 +528,8 @@ applyRememberedPassword(loginMode.value)
 
 .login_page__field {
   display: flex;
+  width: 100%;
+  box-sizing: border-box;
   align-items: center;
   min-height: 56px;
   margin-top: 24px;
@@ -592,6 +606,8 @@ applyRememberedPassword(loginMode.value)
 
 .login_page__line_switch {
   display: flex;
+  width: 100%;
+  max-width: 496px;
   align-items: center;
   justify-content: center;
   margin-top: 22px;
@@ -660,6 +676,16 @@ applyRememberedPassword(loginMode.value)
 
   .login_page__links {
     gap: 12px;
+  }
+}
+
+@media (max-height: 720px) {
+  .login_page__content {
+    padding-top: 44px;
+  }
+
+  .login_page__form {
+    margin-top: 44px;
   }
 }
 </style>

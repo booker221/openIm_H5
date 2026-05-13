@@ -8,6 +8,23 @@ export default function useConversationToggle() {
   const router = useRouter()
   const conversationStore = useConversationStore()
 
+  const isGroupConversation = (sessionType: SessionType) =>
+    Number(sessionType) === Number(SessionType.Group) ||
+    Number(sessionType) === Number(SessionType.WorkingGroup)
+
+  const isSameConversation = (
+    item: ConversationItem,
+    sourceID: string,
+    sessionType: SessionType,
+  ) => {
+    if (item.conversationType !== sessionType) {
+      return false
+    }
+    return isGroupConversation(sessionType)
+      ? item.groupID === sourceID
+      : item.userID === sourceID
+  }
+
   const getConversation = async ({
     sourceID,
     sessionType,
@@ -16,7 +33,7 @@ export default function useConversationToggle() {
     sessionType: SessionType
   }): Promise<ConversationItem | undefined> => {
     let conversation = conversationStore.conversationList.find(
-      (item) => item.userID === sourceID || item.groupID === sourceID,
+      (item) => isSameConversation(item, sourceID, sessionType),
     )
     if (!conversation) {
       try {

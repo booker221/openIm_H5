@@ -58,10 +58,7 @@
         @click="toUserCardDetails"
       />
 
-      <div
-        v-if="showFriendActionBar"
-        class="mx-2 mb-2 overflow-hidden rounded-md bg-white"
-      >
+      <div v-if="showMessageAction" class="mx-2 mb-2 overflow-hidden rounded-md bg-white">
         <button
           class="flex w-full items-center justify-center gap-3 bg-white px-4 py-4 text-[17px] text-[#0C1C33] active:bg-[#F5F6F7]"
           @click="toConversation"
@@ -70,6 +67,7 @@
           <span>{{ $t('sendMessage') }}</span>
         </button>
         <button
+          v-if="showFriendActionBar"
           class="flex w-full items-center justify-center gap-3 border-t border-[#E8EAEF] bg-white px-4 py-4 text-[17px] text-[#0C1C33] active:bg-[#F5F6F7]"
           @click="toCall"
         >
@@ -149,6 +147,7 @@ const canAddFriend = computed(
 )
 const showFriendSettingMore = computed(() => !isSelf.value && isFriendUser.value)
 const showFriendActionBar = computed(() => !isSelf.value && isFriendUser.value)
+const showMessageAction = computed(() => isSelf.value || isFriendUser.value)
 const showUserInfoEntry = computed(
   () =>
     isSelf.value ||

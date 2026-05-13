@@ -2,8 +2,11 @@ import useConversationStore from '@/store/modules/conversation'
 import useMessageStore, { ExMessageItem } from '@/store/modules/message'
 import useUserStore from '@/store/modules/user'
 import emitter from '@/utils/events'
-import { IMSDK } from '@/utils/imCommon'
-import type { MessageItem } from '@openim/wasm-client-sdk/lib/types/entity'
+import { conversationSort, IMSDK } from '@/utils/imCommon'
+import type {
+  ConversationItem,
+  MessageItem,
+} from '@openim/wasm-client-sdk/lib/types/entity'
 import { MessageStatus } from '@openim/wasm-client-sdk'
 import { SendMsgParams } from '@openim/wasm-client-sdk/lib/types/params'
 
@@ -17,6 +20,46 @@ type SendMessageParams = Partial<Omit<SendMsgParams, 'message'>> & {
 }
 
 export default function useSendMessage() {
+  const upsertConversation = (conversation: ConversationItem) => {
+    if (!conversation?.conversationID) return
+
+    const conversations = conversationStore.storeConversationList.filter(
+      (item) => item.conversationID !== conversation.conversationID,
+    )
+    conversationStore.updateConversationList(
+      conversationSort([conversation, ...conversations]),
+    )
+
+    if (
+      conversationStore.storeCurrentConversation.conversationID ===
+      conversation.conversationID
+    ) {
+      conversationStore.updateCurrentConversation(conversation)
+    }
+  }
+
+  const refreshConversationSummary = async (latestMessage: MessageItem) => {
+    const currentConversation = conversationStore.storeCurrentConversation
+    if (!currentConversation.conversationID) return
+
+    upsertConversation({
+      ...currentConversation,
+      latestMsg: JSON.stringify(latestMessage),
+      latestMsgSendTime: latestMessage.sendTime || Date.now(),
+    })
+
+    try {
+      const { data } = await IMSDK.getMultipleConversation([
+        currentConversation.conversationID,
+      ])
+      if (data[0]?.conversationID) {
+        upsertConversation(data[0])
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const sendMessage = async ({
     recvID,
     groupID,
@@ -39,6 +82,7 @@ export default function useSendMessage() {
       // @ts-ignore
       const { data: successMessage } = await IMSDK.sendMessage(options)
       messageStore.updateOneMessage(successMessage as ExMessageItem, true)
+      refreshConversationSummary(successMessage)
     } catch (error) {
       console.error(error)
 
