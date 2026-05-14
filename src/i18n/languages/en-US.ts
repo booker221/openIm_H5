@@ -524,6 +524,8 @@ export const lang = {
     loginFailed: 'Login failed',
     verifyFailed: 'Verification failed',
     updateSelfInfoFailed: 'Failed to update personal information',
+    connectTimeoutRelogin:
+      'Connection timed out. Local cache has been cleared, please log in again',
     nomalSuccess: 'Operation successful',
     nomalFailed: 'Operation failed',
     copySuccess: 'Copy successful',

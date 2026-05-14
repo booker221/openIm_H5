@@ -35,6 +35,8 @@ import { feedbackToast } from '@/utils/common'
 import messageRing from '@assets/audio/newMsg.mp3'
 import { BusinessAllowType } from '@/api/data'
 
+const CONNECTING_TIMEOUT_MS = 30 * 1000
+
 export function useGlobalEvent() {
   const userStore = useUserStore()
   const conversationStore = useConversationStore()
@@ -47,6 +49,8 @@ export function useGlobalEvent() {
   let cacheConversationList = [] as ConversationItem[]
   let syncToast: ToastWrapperInstance | null = null
   let audioEl: HTMLAudioElement | null = null
+  let connectingTimer: number | undefined
+  let connectingTimeoutHandled = false
 
   const setIMListener = () => {
     // account
@@ -107,17 +111,49 @@ export function useGlobalEvent() {
       senderFaceUrl: data.faceURL,
     })
   }
-  const connectingHandler = () => {}
+  const clearConnectingTimer = () => {
+    if (!connectingTimer) return
+    window.clearTimeout(connectingTimer)
+    connectingTimer = undefined
+  }
+
+  const handleConnectingTimeout = async () => {
+    if (connectingTimeoutHandled) return
+
+    connectingTimeoutHandled = true
+    clearConnectingTimer()
+
+    const message = t('messageTip.connectTimeoutRelogin')
+    feedbackToast({
+      message,
+      error: new Error(message),
+    })
+    await userStore.userLogout(true)
+    router.replace('/login')
+  }
+
+  const connectingHandler = () => {
+    if (connectingTimer || connectingTimeoutHandled) return
+    connectingTimer = window.setTimeout(
+      handleConnectingTimeout,
+      CONNECTING_TIMEOUT_MS,
+    )
+  }
   const connectFailedHandler = ({ errCode }: WSEvent) => {
+    clearConnectingTimer()
     if (errCode == 705) {
       tryOut(t('messageTip.loginExpiration'))
     }
   }
-  const connectSuccessHandler = () => {}
+  const connectSuccessHandler = () => {
+    connectingTimeoutHandled = false
+    clearConnectingTimer()
+  }
   const kickHandler = () => tryOut(t('messageTip.loginKicked'))
   const expiredHandler = () => tryOut(t('messageTip.loginExpiration'))
 
-  const tryOut = (message: string) =>
+  const tryOut = (message: string) => {
+    clearConnectingTimer()
     feedbackToast({
       message,
       error: message,
@@ -126,6 +162,7 @@ export function useGlobalEvent() {
         router.push('/login')
       },
     })
+  }
 
   // sync
   const syncStartHandler = ({ data }: WSEvent<boolean>) => {
@@ -355,6 +392,7 @@ export function useGlobalEvent() {
   }
 
   const disposeIMListener = () => {
+    clearConnectingTimer()
     IMSDK.off(CbEvents.OnSelfInfoUpdated, selfUpdateHandler)
     IMSDK.off(CbEvents.OnConnecting, connectingHandler)
     IMSDK.off(CbEvents.OnConnectFailed, connectFailedHandler)
@@ -401,6 +439,8 @@ export function useGlobalEvent() {
     () => userStore.storeSelfInfo.userID,
     () => {
       cacheConversationList = []
+      connectingTimeoutHandled = false
+      clearConnectingTimer()
     },
   )
 

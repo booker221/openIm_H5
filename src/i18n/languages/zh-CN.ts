@@ -520,6 +520,7 @@ export const lang = {
     loginFailed: '登录失败',
     verifyFailed: '验证失败',
     updateSelfInfoFailed: '修改个人信息失败',
+    connectTimeoutRelogin: '连接超时，已清理本地缓存，请重新登录',
     nomalSuccess: '操作成功',
     nomalFailed: '操作失败',
     copySuccess: '复制成功',
