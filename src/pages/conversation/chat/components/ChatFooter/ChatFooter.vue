@@ -253,11 +253,6 @@ const getFile = async (
   })
 }
 
-onMounted(() => {
-  if (!inputRef.value) return
-  inputRef.value.focusAtEnd?.()
-})
-
 onActivated(async () => {
   showActionBar.value = false
   showEmojiBar.value = false
@@ -265,17 +260,7 @@ onActivated(async () => {
   messageContent.value = ''
   await nextTick()
   inputRef.value?.clear()
-  inputRef.value?.focusAtEnd?.()
 })
-
-watch(
-  () => messageStore.storeQuoteMessage?.clientMsgID,
-  async (newVal) => {
-    if (!newVal) return
-    await nextTick()
-    inputRef.value?.focusAtEnd?.()
-  },
-)
 </script>
 
 <style lang="scss" scoped>
