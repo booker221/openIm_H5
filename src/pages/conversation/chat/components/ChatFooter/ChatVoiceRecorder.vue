@@ -35,6 +35,7 @@
 
 <script setup lang="ts">
 import Recorder from 'js-audio-recorder'
+import { getMediaCaptureErrorType, isInAppWebView } from '@/utils/mediaCapture'
 
 type ChatVoiceRecorderEmits = {
   (event: 'send', file: File, duration: number): void
@@ -152,6 +153,28 @@ const destroyRecorder = async (target?: Recorder) => {
   }
 }
 
+const getRecordingErrorMessage = (error: unknown) => {
+  const errorType = getMediaCaptureErrorType(error)
+
+  if (errorType === 'permission_denied') {
+    return t(
+      isInAppWebView()
+        ? 'messageTip.microphonePermissionDeniedInApp'
+        : 'messageTip.microphonePermissionDenied',
+    )
+  }
+
+  if (errorType === 'device_in_use') {
+    return t('messageTip.microphoneInUse')
+  }
+
+  if (errorType === 'device_not_found') {
+    return t('messageTip.microphoneNotFound')
+  }
+
+  return t('messageTip.environmentNotSupported')
+}
+
 const startRecording = async (event: PointerEvent) => {
   if (isRecording.value) {
     return
@@ -190,7 +213,7 @@ const startRecording = async (event: PointerEvent) => {
     await destroyRecorder(recorder)
     recorder = undefined
     resetState()
-    emit('error', '请在浏览器中开启麦克风权限')
+    emit('error', getRecordingErrorMessage(error))
   }
 }
 

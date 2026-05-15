@@ -556,11 +556,18 @@ export const lang = {
     changeFailed: 'Modification failed!',
     deleteSuccess: 'Deleted successfully!',
     environmentNotSupported:
-      'Failed to get permission or current browser not supported',
+      'Failed to get permission or the current environment is not supported',
     getLocation: 'Getting location...',
     getLocationFailed: 'Failed to get location',
     canceled: 'Canceled',
     recordingTooShort: 'Recording time too short',
+    microphonePermissionDenied:
+      'Microphone permission was denied. Please allow it in your browser and try again.',
+    microphonePermissionDeniedInApp:
+      'This page is opened inside an app. Please enable microphone permission in the app or system settings and try again.',
+    microphoneInUse:
+      'The microphone is being used by another app. Please try again later.',
+    microphoneNotFound: 'No available microphone device was detected.',
     generateImageFailed: 'Failed to generate cover image!',
     failLoad: 'Load failed',
     favoriteSuccess: 'Favorite added successfully!',
@@ -680,9 +687,10 @@ export const lang = {
       'Voice and video calling requires HTTPS or localhost in the current environment',
     mediaUnsupported:
       'The current browser does not support the media capabilities required for calling',
-    mediaDeviceError: 'Unable to access the microphone or camera. Check browser permissions.',
+    mediaDeviceError:
+      'Unable to access the microphone or camera. Check browser or app permissions.',
     mediaPermissionDenied:
-      'Microphone or camera permission was denied. Allow access in the browser and try again.',
+      'Microphone or camera permission was denied. Allow access in the browser or app and try again.',
     mediaDeviceInUse:
       'The microphone or camera is being used by another application. Please try again later.',
     audioResumeHint: 'The browser blocked call audio. Tap the speaker button to resume playback.',
