@@ -353,7 +353,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 46px;
-  padding-top: env(safe-area-inset-top);
   background: #fff;
   border-bottom: 1px solid #e8eaef;
 }
